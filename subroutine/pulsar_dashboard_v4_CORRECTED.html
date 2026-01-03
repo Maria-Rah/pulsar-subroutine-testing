@@ -1,0 +1,2029 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NBODY6++GPU Pulsar Integration v4.0 - Technical Report</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            padding: 20px;
+            min-height: 100vh;
+            color: #333;
+        }
+        
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 25px 70px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            color: white;
+            padding: 40px;
+            text-align: center;
+            border-bottom: 5px solid #0f3460;
+        }
+        
+        .header h1 {
+            font-size: 32px;
+            margin-bottom: 15px;
+            font-weight: 700;
+            letter-spacing: 1px;
+        }
+        
+        .header .subtitle {
+            font-size: 18px;
+            opacity: 0.9;
+            margin-bottom: 10px;
+        }
+        
+        .header .author {
+            font-size: 14px;
+            opacity: 0.7;
+            font-style: italic;
+        }
+        
+        .tabs {
+            display: flex;
+            background: #f8f9fa;
+            border-bottom: 3px solid #dee2e6;
+            overflow-x: auto;
+        }
+        
+        .tab {
+            flex: 1;
+            min-width: 150px;
+            padding: 18px 25px;
+            text-align: center;
+            cursor: pointer;
+            background: transparent;
+            border: none;
+            font-size: 14px;
+            font-weight: 600;
+            color: #495057;
+            transition: all 0.3s;
+            border-bottom: 4px solid transparent;
+        }
+        
+        .tab:hover {
+            background: #e9ecef;
+            color: #1e3c72;
+        }
+        
+        .tab.active {
+            background: white;
+            color: #1e3c72;
+            border-bottom: 4px solid #1e3c72;
+        }
+        
+        .content {
+            padding: 35px;
+        }
+        
+        .view {
+            display: none;
+            animation: fadeIn 0.4s;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .view.active {
+            display: block;
+        }
+        
+        h2 {
+            color: #1a1a2e;
+            margin-bottom: 25px;
+            font-size: 26px;
+            border-bottom: 3px solid #1e3c72;
+            padding-bottom: 10px;
+        }
+        
+        h3 {
+            color: #0f3460;
+            margin: 25px 0 15px 0;
+            font-size: 20px;
+            display: flex;
+            align-items: center;
+        }
+        
+        h3::before {
+            content: "▸";
+            margin-right: 10px;
+            color: #1e3c72;
+            font-size: 24px;
+        }
+        
+        .flow-diagram {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+            margin: 30px 0;
+        }
+        
+        .flow-row {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 25px;
+        }
+        
+        .node {
+            background: white;
+            border: 3px solid #dee2e6;
+            border-radius: 12px;
+            padding: 20px 30px;
+            min-width: 200px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            transition: all 0.3s;
+            cursor: pointer;
+        }
+        
+        .node:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+        }
+        
+        .node.core {
+            border-color: #1e3c72;
+            background: linear-gradient(135deg, #e8f0fe 0%, #d0e7ff 100%);
+        }
+        
+        .node.new {
+            border-color: #28a745;
+            background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
+        }
+        
+        .node.modified {
+            border-color: #ffc107;
+            background: linear-gradient(135deg, #fff3cd 0%, #ffeeba 100%);
+        }
+        
+        .node.detection {
+            border-color: #17a2b8;
+            background: linear-gradient(135deg, #d1ecf1 0%, #bee5eb 100%);
+        }
+        
+        .node-title {
+            font-weight: 700;
+            font-size: 17px;
+            margin-bottom: 8px;
+            color: #1a1a2e;
+        }
+        
+        .node-desc {
+            font-size: 13px;
+            color: #6c757d;
+            line-height: 1.5;
+        }
+        
+        .arrow {
+            text-align: center;
+            color: #1e3c72;
+            font-size: 28px;
+            font-weight: bold;
+        }
+        
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 25px 0;
+            font-size: 14px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .data-table th {
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            color: white;
+            padding: 15px;
+            text-align: left;
+            font-weight: 600;
+        }
+        
+        .data-table td {
+            padding: 12px 15px;
+            border-bottom: 1px solid #dee2e6;
+        }
+        
+        .data-table tr:hover {
+            background: #f8f9fa;
+        }
+        
+        .data-table tr:nth-child(even) {
+            background: #fafbfc;
+        }
+        
+        .badge {
+            display: inline-block;
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-right: 6px;
+        }
+        
+        .badge.input {
+            background: #e3f2fd;
+            color: #1976d2;
+        }
+        
+        .badge.output {
+            background: #f3e5f5;
+            color: #7b1fa2;
+        }
+        
+        .badge.tracking {
+            background: #fff3e0;
+            color: #f57c00;
+        }
+        
+        .badge.flag {
+            background: #ffebee;
+            color: #c62828;
+        }
+        
+        .legend {
+            display: flex;
+            justify-content: center;
+            gap: 35px;
+            margin: 35px 0;
+            padding: 25px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            flex-wrap: wrap;
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 14px;
+        }
+        
+        .legend-box {
+            width: 24px;
+            height: 24px;
+            border-radius: 6px;
+            border: 3px solid;
+        }
+        
+        .code-block {
+            background: #1a1a2e;
+            color: #e8f0fe;
+            padding: 25px;
+            border-radius: 10px;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            overflow-x: auto;
+            margin: 20px 0;
+            line-height: 1.6;
+        }
+        
+        .scenario-card {
+            background: white;
+            border: 2px solid #dee2e6;
+            border-radius: 10px;
+            padding: 25px;
+            margin: 20px 0;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+        }
+        
+        .scenario-card h4 {
+            color: #1e3c72;
+            margin-bottom: 15px;
+            font-size: 18px;
+        }
+        
+        .scenario-card .conditions {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 10px 0;
+        }
+        
+        .scenario-card .conditions li {
+            margin: 8px 0;
+            color: #495057;
+            font-size: 13px;
+        }
+        
+        .highlight {
+            background: #fff3cd;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-weight: 600;
+        }
+        
+        .info-box {
+            background: #d1ecf1;
+            border-left: 5px solid #17a2b8;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 5px;
+        }
+        
+        .info-box strong {
+            color: #0c5460;
+            display: block;
+            margin-bottom: 10px;
+        }
+        
+        .warning-box {
+            background: #fff3cd;
+            border-left: 5px solid #ffc107;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 5px;
+        }
+        
+        .warning-box strong {
+            color: #856404;
+            display: block;
+            margin-bottom: 10px;
+        }
+        
+        .success-box {
+            background: #d4edda;
+            border-left: 5px solid #28a745;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 5px;
+        }
+        
+        .success-box strong {
+            color: #155724;
+            display: block;
+            margin-bottom: 10px;
+        }
+        
+        @media print {
+            body {
+                background: white;
+                padding: 0;
+            }
+            .tabs {
+                display: none;
+            }
+            .view {
+                display: block !important;
+                page-break-after: always;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Technical Report for "NBODY6++GPU Pulsar Subroutine"</h1>
+            <div class="subtitle">calc_and_save_pulsar_params.f — Version 4.0</div>
+            <div class="author">Maria Rah · Byurakan Astrophysical Observatory · January 2026</div>
+            <div class="author" style="margin-top: 5px;">Supervisor: Prof. Rainer Spurzem · Mentor: Dr. Francesco Flammini Dotti</div>
+        </div>
+        
+        <div class="tabs">
+            <button class="tab active" onclick="showView('executive')">Subroutine Execution Steps</button>
+            <button class="tab" onclick="showView('architecture')">Architecture</button>
+            <button class="tab" onclick="showView('scenarios')">Scenario Detection</button>
+            <button class="tab" onclick="showView('variables')">Variables & Data Flow</button>
+            <button class="tab" onclick="showView('files')">File Dependencies</button>
+            <button class="tab" onclick="showView('implementation')">Implementation</button>
+            <button class="tab" onclick="showView('output')">Output Format</button>
+        </div>
+        
+        <div class="content">
+            
+            <!-- EXECUTIVE SUMMARY -->
+            <div id="executive" class="view active">
+                <h2>Subroutine Execution Steps (calc_and_save_pulsar_params.f)</h2>
+                
+                <div class="info-box">
+                    <strong>📋 Overview</strong>
+                    This section provides a detailed step-by-step breakdown of how the <code>calc_and_save_pulsar_params</code> subroutine executes for each neutron star (KSTAR=13) during NBODY6++GPU simulation. Each step includes the corresponding line numbers from the Fortran code.
+                </div>
+                
+                <div class="scenario-card">
+                    <h4>STEP 1: Initialization and Validation</h4>
+                    <p style="margin: 10px 0; color: #495057;">
+                        This is the very first filter in the subroutine. It checks whether the star received as input is actually a neutron star (<code>KSTAR=13</code>). If not, the subroutine immediately exits to avoid wasting computational time. Then it calculates the time elapsed since the NS formation (<code>DT = TIME - AGE0</code>). If this time is negative or zero (meaning the NS hasn't formed yet), the subroutine exits immediately. This validation is the most important step to prevent unnecessary and incorrect calculations.
+                    </p>
+                    <div class="code-block">
+Lines 71-78: 
+  J = I
+  IF (KSTAR(J) .NE. 13) RETURN        ! Only neutron stars
+  DT = TIME - AGE0(J)
+  IF (DT .LE. 0.0D0) RETURN           ! NS not yet formed
+                    </div>
+                </div>
+                
+                <div class="scenario-card">
+                    <h4>STEP 2: Calculate Auxiliary Parameters</h4>
+                    <p style="margin: 10px 0; color: #495057;">
+                        In this step, auxiliary parameters needed for scenario detection and physical calculations are computed:
+                        <br><br>
+                        <strong>• Mass changes:</strong> <code>DM</code> (mass change since formation) and <code>DM_DT</code> (rate of mass change) are calculated to identify mass gain through accretion.
+                        <br>
+                        <strong>• Pulsar velocities:</strong> <code>VKICK</code> (initial kick velocity received at formation) and <code>VREL</code> (relative velocity with respect to the surrounding environment) are computed. <code>VREL</code> is obtained from the average velocity of neighbors within radius <code>ATHRESH</code>.
+                        <br>
+                        <strong>• Spatial position:</strong> Distance from cluster center (<code>DIST_CENTER</code>) and spherical coordinates (<code>LAT</code>, <code>LON</code>) are calculated for spatial distribution analysis of pulsars.
+                    </p>
+                    <div class="code-block">
+Lines 84-134:
+  Mass: DM = BODY(J) - XMNS0(J)
+        DM_DT = (BODY(J) - BODY_PREV(J)) / STEP(J)
+  
+  Velocities: VKICK = SQRT(XDOT²) * VSTAR
+              VREL = computed from neighbors in ATHRESH
+  
+  Position: DIST_CENTER = SQRT(X²+Y²+Z²) * RBAR
+            LAT, LON from spherical coordinates
+                    </div>
+                </div>
+                
+                <div class="scenario-card">
+                    <h4>STEP 3: Initialize Period and B-field (First Call)</h4>
+                    <p style="margin: 10px 0; color: #495057;">
+                        Only during the very first call for each specific neutron star, initial values are set:
+                        <br><br>
+                        <strong>• Initial spin period (<code>PERIOD</code>):</strong> Randomly chosen in the range 0.001–0.1 seconds (using the <code>RAN2</code> function)
+                        <br>
+                        <strong>• Initial magnetic field (<code>BMAG</code>):</strong> Randomly chosen in the range 10<sup>8</sup>–10<sup>9</sup> Gauss
+                        <br>
+                        <strong>• Tracking variables:</strong> Initial values for <code>NAME0</code>, <code>BODY_PREV</code>, <code>KSTAR_COMP0</code>, <code>R_PREV</code>, <code>E_BIND0</code> are stored for comparison in later calls to detect sudden changes (like companion exchange or merger).
+                        <br>
+                        <strong>• Flag <code>FIRST_CALL(J)</code>:</strong> Set to TRUE to prevent re-initialization.
+                    </p>
+                    <div class="code-block">
+Lines 139-158:
+  IF (.NOT. FIRST_CALL(J)) THEN
+    PERIOD(J) = 0.001 + 0.099*RAN2(IDUM1)     ! 1-100 ms
+    BMAG(J) = 1.0E8*(1 + 9*RAN2(IDUM1))       ! 10⁸-10⁹ G
+    
+    Initialize tracking: NAME0, BODY_PREV, KSTAR_COMP0, R_PREV, E_BIND0
+    FIRST_CALL(J) = .TRUE.
+  END IF
+                    </div>
+                </div>
+                
+                <div class="scenario-card">
+                    <h4>STEP 4: Binary Status and Companion Information</h4>
+                    <p style="margin: 10px 0; color: #495057;">
+                        The binary status of the pulsar is determined:
+                        <br><br>
+                        <strong>• Status check:</strong> Is the pulsar in a binary system (<code>IS_BINARY</code>) or single (<code>IS_SINGLE</code>)? Also checks whether the companion has changed (<code>COMPANION_CHANGED</code>).
+                        <br>
+                        <strong>• Companion information:</strong> If in a binary, the companion index (<code>I_COMP</code>), its stellar type (<code>KW_COMP</code>), and whether the companion is an NS, BH, or WD are extracted from <code>LIST</code> and <code>KSTAR</code> arrays.
+                        <br>
+                        <strong>• Orbital parameters:</strong> Orbital separation (<code>ORBITAL_SEP</code>), eccentricity (<code>ECC</code>), and binary binding energy (<code>E_BIND_NOW</code>) are calculated.
+                        <br>
+                        This information is essential for detecting scenarios 3-7 (binary systems, accretion, mergers).
+                    </p>
+                    <div class="code-block">
+Lines 163-203:
+  Binary status: IS_BINARY = (NAME(J) > 0)
+                 IS_SINGLE = .NOT. IS_BINARY
+                 COMPANION_CHANGED = (NAME(J) ≠ NAME0(J))
+  
+  IF IS_BINARY:
+    I_COMP = LIST(1,J)
+    KW_COMP = KSTAR(I_COMP)
+    COMP_IS_NS/BH/WD checks
+    ORBITAL_SEP = R(J) * RBAR
+    E_BIND_NOW = -M₁*M₂/(2*ORBITAL_SEP)
+                    </div>
+                </div>
+                
+                <div class="scenario-card">
+                    <h4>STEP 5: Scenario Detection (Physics-Based)</h4>
+                    <p style="margin: 10px 0; color: #495057;">
+                        The pulsar's evolutionary scenario is identified using NBODY6++GPU's internal physics. The detection logic is hierarchical:
+                        <br><br>
+                        <strong>Detection order (from complex to simple):</strong>
+                        <br>
+                        1. <strong>Scenario 6 (NS-NS Merger):</strong> Checks conditions <code>VERY_CLOSE</code>, <code>INSPIRALING</code>, <code>SUDDEN_MASS_JUMP</code>, <code>STRONG_GW</code>
+                        <br>
+                        2. <strong>Scenario 7 (NS-BH Merger):</strong> Checks <code>INSIDE_TIDAL_RADIUS</code>, <code>ASYMMETRIC_MERGER</code>
+                        <br>
+                        3. <strong>Scenario 3 (Accreting MSP):</strong> Checks <code>IS_RLOF</code>, <code>IS_ACCRETING</code>, <code>IS_DONOR_EVOLVING</code>
+                        <br>
+                        4. <strong>Scenario 4 (Dynamic MSP):</strong> Checks <code>NEW_COMPANION</code>, <code>SUDDEN_E_CHANGE</code>, <code>RECENT_ENCOUNTER</code>, <code>IN_CORE</code>
+                        <br>
+                        5. <strong>Scenario 5 (Wide Binary):</strong> Checks <code>IS_WIDE</code>, <code>NO_ACCRETION</code>, <code>COMP_STABLE</code>
+                        <br>
+                        6. <strong>Scenario 2 (Isolated MSP):</strong> Checks <code>WAS_IN_BINARY</code>, <code>MSPHISTORY</code>
+                        <br>
+                        7. <strong>Scenario 1 (Isolated Pulsar):</strong> Default for remaining cases
+                        <br><br>
+                        Each scenario has specific physical conditions extracted from common6.h data. Internal flags (<code>MERGERFLAG</code>, <code>ACCFLAG</code>, <code>DYNFLAG</code>, <code>WIDE_BINARY_FLAG</code>) are set by this subroutine.
+                    </p>
+                    <div class="code-block">
+Lines 208-381: Hierarchical scenario detection
+  
+  Scenario 6: NS-NS → Check merger physics
+  Scenario 7: NS-BH → Check tidal disruption
+  Scenario 3: Accretion → Check RLOF & mass transfer
+  Scenario 4: Dynamics → Check exchange & encounters
+  Scenario 5: Wide → Check separation & stability
+  Scenario 2: Isolated MSP → Check history
+  Scenario 1: Isolated → Default
+  
+  Set internal flags: MERGERFLAG, DYNFLAG, ACCFLAG, etc.
+                    </div>
+                </div>
+                
+                <div class="scenario-card">
+                    <h4>STEP 6: Calculate Pdot Components</h4>
+                    <p style="margin: 10px 0; color: #495057;">
+                        The spin period derivative (<code>Pdot</code>) is calculated from 8 physical components:
+                        <br><br>
+                        <strong>Always-active components (for all scenarios):</strong>
+                        <br>
+                        1. <code>PDOT_DIPOLE</code>: Magnetic dipole radiation - always causes spin-down
+                        <br>
+                        2. <code>PDOT_DECAY</code>: Magnetic field decay - exponentially decreases with time
+                        <br>
+                        3. <code>PDOT_ENV</code>: Environmental torque - effect of cluster environment on spin
+                        <br><br>
+                        <strong>Scenario-dependent components:</strong>
+                        <br>
+                        4. <code>PDOT_ACC</code>: Spin-up from accretion (scenario 3 only) - causes spin increase
+                        <br>
+                        5. <code>PDOT_MERGE</code>: Merger effects (scenarios 6-7) - dramatic spin changes
+                        <br>
+                        6. <code>PDOT_ASYM</code>: Asymmetric kick (if VKICK>200 km/s) - supernova kick effects
+                        <br>
+                        7. <code>PDOT_DYN</code>: Dynamical interactions (scenario 4) - exchange effects
+                        <br>
+                        8. <code>PDOT_GW</code>: Gravitational waves (close binaries) - gravitational energy loss
+                        <br><br>
+                        <strong>Total Pdot = sum of all components</strong>
+                    </p>
+                    <div class="code-block">
+Lines 387-436:
+  Always:
+    PDOT_DIPOLE = K_field * B² * R⁶ * sin²α / (I*c³*P)
+    PDOT_ENV = K_env * ρ * V_rel * P²
+  
+  Scenario-dependent:
+    PDOT_ACC (sc.3) = -K_acc * dM/dt * P
+    PDOT_MERGE (sc.6,7) = -K_merge * P * (ΔM/M₀)
+    PDOT_ASYM (V_kick>200) = K_asym * V_kick * P
+    PDOT_DYN (sc.4) = -K_dyn * P
+    PDOT_GW (binaries) = K_gw * M² / a⁴
+  
+  PDOT(J) = Σ(all components)
+  
+  NOTE (v4): PDOT_DECAY removed - double counting with B exponential decay
+                    </div>
+                </div>
+                
+                <div class="scenario-card">
+                    <h4>STEP 7: Update Period and B-field</h4>
+                    <p style="margin: 10px 0; color: #495057;">
+                        The spin period and magnetic field are updated:
+                        <br><br>
+                        <strong>• Period update:</strong> <code>PERIOD(J) = PERIOD(J) + PDOT(J) × STEP(J) × TSTAR</code>
+                        <br>
+                        A minimum period of 10<sup>-4</sup> seconds is enforced to prevent unphysical values.
+                        <br>
+                        <strong>• Exponential B-field decay:</strong> <code>BMAG(J) = BMAG(J) × exp(-STEP×TSTAR/τ)</code>
+                        <br>
+                        The magnetic field decreases exponentially with characteristic timescale <code>XKTAU</code>.
+                        <br>
+                        <strong>• B-field recalibration (if Pdot > 0):</strong> To ensure consistency with the dipole radiation equation, the magnetic field is recalculated from <code>P</code> and <code>Pdot</code>: <code>B = √(I×P×Pdot×c³ / (K×R⁶))</code>
+                    </p>
+                    <div class="code-block">
+Lines 442-457:
+  Update period:
+    PERIOD(J) = PERIOD(J) + PDOT(J)*STEP(J)*TSTAR
+    IF (PERIOD < 10⁻⁴) PERIOD = 10⁻⁴
+  
+  Decay B-field:
+    BMAG(J) = BMAG(J) * exp(-STEP*TSTAR/τ)
+  
+  Recalibrate if Pdot>0:
+    BMAG = √(I*P*Pdot*c³/(K*R⁶))
+                    </div>
+                </div>
+                
+                <div class="scenario-card">
+                    <h4>STEP 8: Calculate Energies</h4>
+                    <p style="margin: 10px 0; color: #495057;">
+                        Various energies of the pulsar are calculated:
+                        <br><br>
+                        <strong>• Kinetic energy:</strong> <code>E_KINETIC = ½ M V²</code> from orbital velocity
+                        <br>
+                        <strong>• Potential energy:</strong> <code>E_POTENTIAL = M × PHI(J)</code> from cluster gravitational potential
+                        <br>
+                        <strong>• Total energy:</strong> <code>E_TOTAL = E_KINETIC + E_POTENTIAL</code>
+                        <br>
+                        <strong>• Binary binding energy:</strong> <code>E_BINDING = -M₁×M₂/(2a)</code> (if in a binary)
+                        <br><br>
+                        These energies are used for plotting the P-E diagram and analyzing system stability.
+                    </p>
+                    <div class="code-block">
+Lines 462-470:
+  E_KINETIC = ½ * M * V²
+  E_POTENTIAL = M * PHI(J)
+  E_TOTAL = E_KINETIC + E_POTENTIAL
+  E_BINDING = -M₁*M₂/(2*a)  [if binary]
+                    </div>
+                </div>
+                
+                <div class="scenario-card">
+                    <h4>STEP 9: Save Output</h4>
+                    <p style="margin: 10px 0; color: #495057;">
+                        Pulsar data are written to the output file:
+                        <br><br>
+                        <strong>• Filename:</strong> <code>pulsar.55_TTTTTTTT.dat</code> where <code>TTTTTTTT = INT(TIME×TSTAR)</code> in years
+                        <br>
+                        Example: <code>pulsar.55_01000000.dat</code> means data at 10 million years
+                        <br><br>
+                        <strong>• Output format:</strong> 20 columns including:
+                        <br>
+                        TIME, NAME, KSTAR, PERIOD, PDOT, BMAG, X, Y, Z, VX, VY, VZ, FX, FY, FZ, E_TOTAL, E_BINDING, SCENARIO_ID, LAT, LON
+                        <br><br>
+                        This format is optimized for generating P-Pdot, P-B, and P-E diagrams.
+                    </p>
+                    <div class="code-block">
+Lines 475-491:
+  FILENAME = 'pulsar.55_' + INT(TIME*TSTAR) + '.dat'
+  OPEN(55, FILE=FILENAME, APPEND)
+  
+  WRITE(55): 20 columns including
+    - Pulsar params: PERIOD, PDOT, BMAG
+    - Position & velocity: X,Y,Z, VX,VY,VZ
+    - Forces: FX, FY, FZ
+    - Energies: E_TOTAL, E_BINDING
+    - Classification: SCENARIO_ID
+    - Coordinates: LAT, LON
+  
+  CLOSE(55)
+                    </div>
+                </div>
+                
+                <div class="scenario-card">
+                    <h4>STEP 10: Update Tracking Variables for Next Call</h4>
+                    <p style="margin: 10px 0; color: #495057;">
+                        Tracking variables are updated for the next call:
+                        <br><br>
+                        <strong>• <code>NAME0(J) = NAME(J)</code>:</strong> For detecting companion change in binary systems
+                        <br>
+                        <strong>• <code>BODY_PREV(J) = BODY(J)</code>:</strong> For calculating mass change rate in next step
+                        <br>
+                        <strong>• <code>KSTAR_COMP0(J)</code>:</strong> For detecting companion type change (dynamical exchange)
+                        <br>
+                        <strong>• <code>R_PREV(J)</code>:</strong> For calculating orbital separation change rate (inspiraling)
+                        <br>
+                        <strong>• <code>E_BIND0(J)</code>:</strong> For detecting sudden energy changes (dynamical interactions)
+                        <br><br>
+                        These variables enable detection of sudden changes (<code>COMPANION_CHANGED</code>, <code>SUDDEN_MASS_JUMP</code>, <code>SUDDEN_E_CHANGE</code>) in the next call, which is essential for identifying complex scenarios.
+                    </p>
+                    <div class="code-block">
+Lines 496-507:
+  NAME0(J) = NAME(J)
+  BODY_PREV(J) = BODY(J)
+  
+  IF (I_COMP > 0):
+    KSTAR_COMP0(J) = KSTAR(I_COMP)
+    R_PREV(J) = R(J)
+    E_BIND0(J) = E_BIND_NOW
+  ELSE:
+    Reset companion tracking to zero
+                    </div>
+                </div>
+                
+                <div class="success-box">
+                    <strong>✅ Execution Summary</strong>
+                    The subroutine executes these 10 steps sequentially for each neutron star at every integration timestep in NBODY6++GPU. The self-contained design ensures all physics detection, flag management, and data output occur within this single subroutine without requiring modifications to core simulation routines.
+                </div>
+            </div>
+            
+            <!-- ARCHITECTURE -->
+            <div id="architecture" class="view">
+                <h2>System Architecture</h2>
+                
+                <h3>Data Flow Overview</h3>
+                <div class="flow-diagram">
+                    <div class="flow-row">
+                        <div class="node modified">
+                            <div class="node-title">input.F</div>
+                            <div class="node-desc">Namelist /INPULSAR/<br>Read constants & initialize</div>
+                        </div>
+                    </div>
+                    
+                    <div class="arrow">↓</div>
+                    
+                    <div class="flow-row">
+                        <div class="node core">
+                            <div class="node-title">common6.h</div>
+                            <div class="node-desc">COMMON/NBODY/ variables<br>Shared across all routines</div>
+                        </div>
+                    </div>
+                    
+                    <div class="arrow">↓</div>
+                    
+                    <div class="flow-row">
+                        <div class="node modified">
+                            <div class="node-title">mdot.F (Line 873)</div>
+                            <div class="node-desc">IF (KSTAR(I)==13)<br>CALL calc_and_save_pulsar_params(I)</div>
+                        </div>
+                    </div>
+                    
+                    <div class="arrow">↓</div>
+                    
+                    <div class="flow-row">
+                        <div class="node new">
+                            <div class="node-title">calc_and_save_pulsar_params</div>
+                            <div class="node-desc">
+                                Physics detection → Flag setting<br>
+                                Pdot calculation → Output
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="arrow">↙ ↓ ↘</div>
+                    
+                    <div class="flow-row">
+                        <div class="node detection">
+                            <div class="node-title">Internal Detection</div>
+                            <div class="node-desc">
+                                Analyze: BODY, KSTAR, NAME<br>
+                                X, XDOT, LIST, R, H<br>
+                                STEP, TIME, PHI, NSTEPI
+                            </div>
+                        </div>
+                        <div class="node detection">
+                            <div class="node-title">Flag Management</div>
+                            <div class="node-desc">
+                                Set: MERGERFLAG<br>
+                                DYNFLAG, ACCRETION_FLAG<br>
+                                MSPHISTORY, etc.
+                            </div>
+                        </div>
+                        <div class="node new">
+                            <div class="node-title">Output Files</div>
+                            <div class="node-desc">
+                                pulsar.55_XXXXXXXX.dat<br>
+                                20 columns per NS
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="arrow">↓</div>
+                    
+                    <div class="flow-row">
+                        <div class="node modified">
+                            <div class="node-title">mydump.F</div>
+                            <div class="node-desc">Save/Restore pulsar state<br>for simulation restarts</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <h3>Subroutine Internal Flow</h3>
+                <p style="margin: 10px 0 20px 0; color: #495057;">
+                    This diagram shows the internal flow of the subroutine in greater detail. Each step shows what inputs it receives, what calculations it performs, and what outputs it produces:
+                </p>
+                <div class="code-block">
+SUBROUTINE calc_and_save_pulsar_params(I)
+│
+├─ STEP 1: Validation & Early Exit
+│   │ Input: I (particle index)
+│   │ Check: KSTAR(I) == 13?  → If NO: RETURN
+│   │ Check: DT = TIME-AGE0 > 0?  → If NO: RETURN
+│   └─ Continue only if valid NS
+│
+├─ STEP 2: Gather Physical Context
+│   │ Mass: DM, DM_DT from BODY, BODY_PREV
+│   │ Velocity: VKICK from XDOT, VREL from neighbors
+│   │ Position: DIST_CENTER, LAT, LON from X
+│   └─ Output: Auxiliary parameters for detection
+│
+├─ STEP 3: First-Time Initialization (if needed)
+│   │ Check: FIRST_CALL(J) == FALSE?
+│   │ YES → Randomize: PERIOD ∈ [1-100 ms]
+│   │                  BMAG ∈ [10⁸-10⁹ G]
+│   │       Initialize: NAME0, BODY_PREV, R_PREV, E_BIND0
+│   │       Set: FIRST_CALL(J) = TRUE
+│   └─ NO → Skip (already initialized)
+│
+├─ STEP 4: Extract Binary Information
+│   │ Check: IS_BINARY = (NAME(J) > 0)?
+│   │ YES → Get: I_COMP, KW_COMP, ORBITAL_SEP, E_BIND_NOW
+│   │       Check: COMP_IS_NS/BH/WD?
+│   │       Detect: COMPANION_CHANGED?
+│   └─ NO → IS_SINGLE = TRUE, skip binary params
+│
+├─ STEP 5: Scenario Detection (Hierarchical)
+│   │ Priority 1: Check NS-NS merger (Scenario 6)
+│   │            Conditions: VERY_CLOSE, INSPIRALING, STRONG_GW
+│   │ Priority 2: Check NS-BH merger (Scenario 7)
+│   │            Conditions: INSIDE_TIDAL_RADIUS, ASYMMETRIC
+│   │ Priority 3: Check Accretion MSP (Scenario 3)
+│   │            Conditions: IS_RLOF, IS_ACCRETING
+│   │ Priority 4: Check Dynamic MSP (Scenario 4)
+│   │            Conditions: NEW_COMPANION, RECENT_ENCOUNTER
+│   │ Priority 5: Check Wide Binary (Scenario 5)
+│   │            Conditions: IS_WIDE, NO_ACCRETION
+│   │ Priority 6: Check Isolated MSP (Scenario 2)
+│   │            Conditions: WAS_IN_BINARY, MSPHISTORY
+│   │ Default: Isolated Pulsar (Scenario 1)
+│   │
+│   └─ Output: SCENARIO_ID (1-7)
+│             Set flags: MERGERFLAG, DYNFLAG, ACCFLAG, etc.
+│
+├─ STEP 6: Calculate All Pdot Components
+│   │ Always compute:
+│   │   • PDOT_DIPOLE (magnetic braking)
+│   │   • PDOT_ENV (environment)
+│   │
+│   │ Conditionally compute:
+│   │   • PDOT_ACC if SCENARIO==3
+│   │   • PDOT_MERGE if SCENARIO==6 or 7
+│   │   • PDOT_ASYM if VKICK>200
+│   │   • PDOT_DYN if SCENARIO==4
+│   │   • PDOT_GW if binary & close
+│   │
+│   │ NOTE (v4): PDOT_DECAY removed (double counting)
+│   │
+│   └─ Sum: PDOT = Σ(all components)
+│
+├─ STEP 7: Time Evolution
+│   │ Update PERIOD: P(t+Δt) = P(t) + Pdot*Δt
+│   │ Enforce minimum: P ≥ 10⁻⁴ s
+│   │ Decay BMAG: B(t+Δt) = B(t)*exp(-Δt/τ)
+│   │ Recalibrate if Pdot>0: B = √(I*P*Pdot*c³/K*R⁶)
+│   └─ Output: Updated PERIOD(J), BMAG(J)
+│
+├─ STEP 8: Energy Budget
+│   │ Kinetic: E_K = ½*M*V²
+│   │ Potential: E_P = M*PHI
+│   │ Total: E_TOT = E_K + E_P
+│   │ Binary (if applicable): E_BIND = -M₁*M₂/(2a)
+│   └─ Output: E_TOTAL, E_BINDING
+│
+├─ STEP 9: Write to Disk
+│   │ Filename: pulsar.55_[TIME_in_years].dat
+│   │ Format: 20 columns (TIME, NAME, KSTAR, P, Pdot, B,
+│   │                     X,Y,Z, VX,VY,VZ, FX,FY,FZ,
+│   │                     E_TOT, E_BIND, SCENARIO, LAT, LON)
+│   │ Mode: APPEND (accumulate data)
+│   └─ Output: File on disk for analysis
+│
+└─ STEP 10: Prepare for Next Call
+    │ Save current state for comparison:
+    │   NAME0(J) ← NAME(J)
+    │   BODY_PREV(J) ← BODY(J)
+    │   KSTAR_COMP0(J) ← KW_COMP
+    │   R_PREV(J) ← R(J)
+    │   E_BIND0(J) ← E_BIND_NOW
+    └─ RETURN
+    
+END SUBROUTINE
+                </div>
+            </div>
+            
+            <!-- SCENARIO DETECTION -->
+            <div id="scenarios" class="view">
+                <h2>Scenario Detection Logic</h2>
+                
+                <div class="warning-box">
+                    <strong>⚠️ Detection Strategy</strong>
+                    Scenarios are detected using NBODY6++GPU's native variables WITHOUT requiring external flags from merge.f, sn_evolve.f, or encounter.f. The subroutine sets its own flags based on physical conditions.
+                </div>
+                
+                <!-- Scenario 1 -->
+                <div class="scenario-card">
+                    <h4>Scenario 1: Isolated Pulsar</h4>
+                    <div class="conditions">
+                        <strong>Physical Conditions:</strong>
+                        <ul>
+                            <li>✓ <span class="highlight">NAME(J) == 0</span> → Not in binary</li>
+                            <li>✓ <span class="highlight">MSPHISTORY(J) == FALSE</span> → No MSP history</li>
+                            <li>✓ <span class="highlight">VKICK < 100 km/s</span> → Normal velocity (no strong kick)</li>
+                        </ul>
+                        <strong>NBODY6++GPU Variables Used:</strong>
+                        <ul>
+                            <li>NAME(J) from common6.h</li>
+                            <li>XDOT(1:3,J) → calculate VKICK</li>
+                            <li>MSPHISTORY(J) from our tracking</li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <!-- Scenario 2 -->
+                <div class="scenario-card">
+                    <h4>Scenario 2: Isolated MSP</h4>
+                    <div class="conditions">
+                        <strong>Physical Conditions:</strong>
+                        <ul>
+                            <li>✓ <span class="highlight">NAME(J) == 0</span> → Currently single</li>
+                            <li>✓ <span class="highlight">NAME0(J) > 0</span> → Was in binary</li>
+                            <li>✓ <span class="highlight">MSPHISTORY(J) == TRUE</span> → Has MSP history</li>
+                            <li>✓ <span class="highlight">BODY(J) > XMNS0(J) + 0.01</span> → Accreted mass</li>
+                        </ul>
+                        <strong>Detection Logic:</strong>
+                        <ul>
+                            <li>NS was spun up in binary via accretion</li>
+                            <li>Companion lost (ejection/merger/evaporation)</li>
+                            <li>Retains MSP properties (P < 30 ms typically)</li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <!-- Scenario 3 -->
+                <div class="scenario-card">
+                    <h4>Scenario 3: MSP via Accretion (Most Complex)</h4>
+                    <div class="conditions">
+                        <strong>Physical Conditions (ALL must be true):</strong>
+                        <ul>
+                            <li>✓ <span class="highlight">NAME(J) > 0</span> → In binary</li>
+                            <li>✓ <span class="highlight">DM_DT > 0</span> → Positive mass transfer rate</li>
+                            <li>✓ <span class="highlight">KW_COMP ∈ [2,9]</span> → Donor is evolving star (giant/AGB)</li>
+                            <li>✓ <span class="highlight">ORBITAL_SEP < 10^13 cm</span> → Close enough for MT</li>
+                            <li>✓ <span class="highlight">R_COMP > 0.9 * R_LOBE</span> → Roche lobe overflow</li>
+                        </ul>
+                        <strong>Calculation Details:</strong>
+                        <div class="code-block">
+! Get companion
+I_COMP = LIST(1,J)
+KW_COMP = KSTAR(I_COMP)
+
+! Mass transfer rate
+DM_DT = (BODY(J) - BODY_PREV(J)) / STEP(J)
+
+! Roche lobe calculation
+Q = BODY(J) / BODY(I_COMP)
+R_LOBE = 0.49*a*Q^(2/3) / (0.6*Q^(2/3) + ln(1+Q^(1/3)))
+
+! Companion radius (estimate from KSTAR)
+IF (KW_COMP == 2-3) R_COMP ≈ 10 R_sun    ! Giants
+IF (KW_COMP == 4-5) R_COMP ≈ 100 R_sun   ! AGB
+
+! Check overflow
+IS_RLOF = (R_COMP > 0.9 * R_LOBE)
+                        </div>
+                        <strong>Flags Set:</strong>
+                        <ul>
+                            <li>ACCRETION_FLAG(J) = 1</li>
+                            <li>MSPHISTORY(J) = .TRUE.</li>
+                            <li>AGEX(J) = TIME (record RLOF time)</li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <!-- Scenario 4 -->
+                <div class="scenario-card">
+                    <h4>Scenario 4: MSP via Dynamics (Exchange Interaction)</h4>
+                    <div class="conditions">
+                        <strong>Physical Conditions:</strong>
+                        <ul>
+                            <li>✓ <span class="highlight">NAME(J) > 0</span> → Currently in binary</li>
+                            <li>✓ <span class="highlight">NAME0(J) == 0 OR NAME(J) ≠ NAME0(J)</span> → Binary status changed</li>
+                            <li>✓ <span class="highlight">|E_BIND - E_BIND0| > 0.5*|E_BIND|</span> → Sudden energy change</li>
+                            <li>✓ <span class="highlight">KSTAR(I_COMP) ≠ KSTAR_COMP0</span> → New companion type</li>
+                            <li>✓ <span class="highlight">NSTEPI(J) < 10</span> → Recent irregular steps (encounter)</li>
+                            <li>✓ <span class="highlight">DIST_CENTER < RC</span> → In core region</li>
+                        </ul>
+                        <strong>Physical Interpretation:</strong>
+                        <ul>
+                            <li>Exchange interactions occur in dense core</li>
+                            <li>NSTEPI tracks irregular timesteps (close encounters)</li>
+                            <li>Binding energy changes suddenly during exchange</li>
+                            <li>Original companion replaced by interloper</li>
+                        </ul>
+                        <strong>Flags Set:</strong>
+                        <ul>
+                            <li>DYNFLAG(J) = 1</li>
+                            <li>EXCHANGE_TIME(J) = TIME</li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <!-- Scenario 5 -->
+                <div class="scenario-card">
+                    <h4>Scenario 5: Wide Binary</h4>
+                    <div class="conditions">
+                        <strong>Physical Conditions:</strong>
+                        <ul>
+                            <li>✓ <span class="highlight">NAME(J) > 0</span> → In binary</li>
+                            <li>✓ <span class="highlight">ORBITAL_SEP > ATHRESH</span> → Wide separation (>10^12 cm)</li>
+                            <li>✓ <span class="highlight">DM_DT ≤ 0</span> → No accretion</li>
+                            <li>✓ <span class="highlight">Companion stable</span> → MS, WD, or compact object</li>
+                        </ul>
+                        <strong>Flags Set:</strong>
+                        <ul>
+                            <li>WIDE_BINARY_FLAG(J) = 1</li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <!-- Scenario 6 -->
+                <div class="scenario-card">
+                    <h4>Scenario 6: NS-NS Merger (GW Inspiral)</h4>
+                    <div class="conditions">
+                        <strong>Physical Conditions (ANY can trigger):</strong>
+                        <ul>
+                            <li>✓ <span class="highlight">KSTAR(I_COMP) == 13</span> → Companion is NS</li>
+                            <li>✓ <span class="highlight">ORBITAL_SEP < 100*YI</span> → Very close (<1000 km)</li>
+                            <li>✓ <span class="highlight">|DM| > 0.3*XMNS0</span> → Sudden mass jump (>30%)</li>
+                            <li>✓ <span class="highlight">DR_DT < -10^5 cm/s</span> → Inspiral (separation decreasing)</li>
+                            <li>✓ <span class="highlight">GW_POWER > 10^40 erg/s</span> → Strong GW emission</li>
+                            <li>✓ <span class="highlight">T_MERGE < 100*STEP</span> → Merger imminent</li>
+                        </ul>
+                        <strong>GW Calculation:</strong>
+                        <div class="code-block">
+! Gravitational wave luminosity
+dE/dt = (32/5) * G^4/c^5 * (m1*m2)^2 * (m1+m2) / a^5
+
+! Inspiral rate
+DR_DT = (R(J) - R_PREV(J)) / STEP(J)
+
+! Time to merger
+T_MERGE = -ORBITAL_SEP / DR_DT  (if DR_DT < 0)
+                        </div>
+                        <strong>Flags Set:</strong>
+                        <ul>
+                            <li>MERGERFLAG(J) = 1</li>
+                            <li>MERGER_TYPE(J) = 1 (NS-NS)</li>
+                            <li>MERGER_TIME(J) = TIME</li>
+                        </ul>
+                        <strong>B-field Evolution:</strong>
+                        <ul>
+                            <li>BMAG(J) *= 2.0 (strong amplification)</li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <!-- Scenario 7 -->
+                <div class="scenario-card">
+                    <h4>Scenario 7: NS-BH Merger (Tidal Disruption)</h4>
+                    <div class="conditions">
+                        <strong>Physical Conditions:</strong>
+                        <ul>
+                            <li>✓ <span class="highlight">KSTAR(I_COMP) == 14</span> → Companion is BH</li>
+                            <li>✓ Similar to Scenario 6 (inspiral conditions)</li>
+                            <li>✓ <span class="highlight">Q = M_NS/M_BH < 0.3</span> → Asymmetric mass ratio</li>
+                            <li>✓ <span class="highlight">ORBITAL_SEP < 2*R_TIDAL</span> → Inside tidal radius</li>
+                        </ul>
+                        <strong>Tidal Radius:</strong>
+                        <div class="code-block">
+! Tidal disruption radius
+R_TIDAL = R_NS * (M_BH/M_NS)^(1/3)
+
+! NS is tidally disrupted before direct contact
+                        </div>
+                        <strong>Flags Set:</strong>
+                        <ul>
+                            <li>MERGERFLAG(J) = 2 (NS-BH)</li>
+                            <li>MERGER_TYPE(J) = 2</li>
+                            <li>MERGER_TIME(J) = TIME</li>
+                        </ul>
+                        <strong>B-field Evolution:</strong>
+                        <ul>
+                            <li>BMAG(J) *= 1.2 (moderate amplification, NS disrupted)</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- VARIABLES -->
+            <div id="variables" class="view">
+                <h2>Variables & Data Flow</h2>
+                
+                <h3>NBODY6++GPU Native Variables (common6.h)</h3>
+                <table class="data-table">
+                    <tr>
+                        <th>Variable</th>
+                        <th>Type</th>
+                        <th>Purpose</th>
+                        <th>Used In Scenarios</th>
+                    </tr>
+                    <tr>
+                        <td><strong>NAME(J)</strong></td>
+                        <td>INTEGER</td>
+                        <td>Binary membership (0=single, >0=binary pair ID)</td>
+                        <td>All</td>
+                    </tr>
+                    <tr>
+                        <td><strong>KSTAR(J)</strong></td>
+                        <td>INTEGER</td>
+                        <td>Stellar type (13=NS, 14=BH)</td>
+                        <td>All</td>
+                    </tr>
+                    <tr>
+                        <td><strong>BODY(J)</strong></td>
+                        <td>REAL*8</td>
+                        <td>Mass (M_sun)</td>
+                        <td>All</td>
+                    </tr>
+                    <tr>
+                        <td><strong>X(1:3,J)</strong></td>
+                        <td>REAL*8</td>
+                        <td>Position vector (N-body units)</td>
+                        <td>1, 4, Output</td>
+                    </tr>
+                    <tr>
+                        <td><strong>XDOT(1:3,J)</strong></td>
+                        <td>REAL*8</td>
+                        <td>Velocity vector (N-body units)</td>
+                        <td>1, 4, 6, 7, Output</td>
+                    </tr>
+                    <tr>
+                        <td><strong>LIST(1,J)</strong></td>
+                        <td>INTEGER</td>
+                        <td>Companion index (if binary)</td>
+                        <td>3, 4, 5, 6, 7</td>
+                    </tr>
+                    <tr>
+                        <td><strong>R(J)</strong></td>
+                        <td>REAL*8</td>
+                        <td>Binary separation (N-body units)</td>
+                        <td>3, 5, 6, 7</td>
+                    </tr>
+                    <tr>
+                        <td><strong>H(J)</strong></td>
+                        <td>REAL*8</td>
+                        <td>Binary orbital parameters array</td>
+                        <td>3, 5, 6, 7</td>
+                    </tr>
+                    <tr>
+                        <td><strong>STEP(J)</strong></td>
+                        <td>REAL*8</td>
+                        <td>Timestep for particle J</td>
+                        <td>All (derivatives)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>TIME</strong></td>
+                        <td>REAL*8</td>
+                        <td>Current simulation time</td>
+                        <td>All</td>
+                    </tr>
+                    <tr>
+                        <td><strong>PHI(J)</strong></td>
+                        <td>REAL*8</td>
+                        <td>Gravitational potential</td>
+                        <td>Energy calculation</td>
+                    </tr>
+                    <tr>
+                        <td><strong>F(1:3,J)</strong></td>
+                        <td>REAL*8</td>
+                        <td>Force vector</td>
+                        <td>Output</td>
+                    </tr>
+                    <tr>
+                        <td><strong>NSTEPI(J)</strong></td>
+                        <td>INTEGER</td>
+                        <td>Irregular timestep counter (encounters)</td>
+                        <td>4 (dynamics)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>RC</strong></td>
+                        <td>REAL*8</td>
+                        <td>Core radius</td>
+                        <td>4 (dynamics)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>ZMBAR</strong></td>
+                        <td>REAL*8</td>
+                        <td>Mean mass in solar units</td>
+                        <td>6, 7 (GW calc)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>RBAR</strong></td>
+                        <td>REAL*8</td>
+                        <td>Length unit (pc)</td>
+                        <td>Unit conversion</td>
+                    </tr>
+                    <tr>
+                        <td><strong>VSTAR</strong></td>
+                        <td>REAL*8</td>
+                        <td>Velocity unit (km/s)</td>
+                        <td>Unit conversion</td>
+                    </tr>
+                    <tr>
+                        <td><strong>TSTAR</strong></td>
+                        <td>REAL*8</td>
+                        <td>Time unit (Myr)</td>
+                        <td>Unit conversion</td>
+                    </tr>
+                </table>
+                
+                <h3>Pulsar-Specific Variables (Added to common6.h)</h3>
+                <table class="data-table">
+                    <tr>
+                        <th>Variable</th>
+                        <th>Type</th>
+                        <th>Category</th>
+                        <th>Purpose</th>
+                    </tr>
+                    <tr>
+                        <td><strong>NAME0(J)</strong></td>
+                        <td>INTEGER</td>
+                        <td><span class="badge tracking">Tracking</span></td>
+                        <td>Previous NAME (detect exchange)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>KSTAR_COMP0(J)</strong></td>
+                        <td>INTEGER</td>
+                        <td><span class="badge tracking">Tracking</span></td>
+                        <td>Previous companion type</td>
+                    </tr>
+                    <tr>
+                        <td><strong>BODY_PREV(J)</strong></td>
+                        <td>REAL*8</td>
+                        <td><span class="badge tracking">Tracking</span></td>
+                        <td>Mass at previous timestep (for DM_DT)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>R_PREV(J)</strong></td>
+                        <td>REAL*8</td>
+                        <td><span class="badge tracking">Tracking</span></td>
+                        <td>Separation at previous step (for DR_DT)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>E_BIND0(J)</strong></td>
+                        <td>REAL*8</td>
+                        <td><span class="badge tracking">Tracking</span></td>
+                        <td>Previous binding energy (for DE_DT)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>MERGERFLAG(J)</strong></td>
+                        <td>INTEGER</td>
+                        <td><span class="badge flag">Flag</span></td>
+                        <td>0=no, 1=NS-NS, 2=NS-BH merger</td>
+                    </tr>
+                    <tr>
+                        <td><strong>DYNFLAG(J)</strong></td>
+                        <td>INTEGER</td>
+                        <td><span class="badge flag">Flag</span></td>
+                        <td>1 = exchange interaction occurred</td>
+                    </tr>
+                    <tr>
+                        <td><strong>ACCRETION_FLAG(J)</strong></td>
+                        <td>INTEGER</td>
+                        <td><span class="badge flag">Flag</span></td>
+                        <td>1 = currently accreting</td>
+                    </tr>
+                    <tr>
+                        <td><strong>WIDE_BINARY_FLAG(J)</strong></td>
+                        <td>INTEGER</td>
+                        <td><span class="badge flag">Flag</span></td>
+                        <td>1 = wide binary</td>
+                    </tr>
+                    <tr>
+                        <td><strong>MSPHISTORY(J)</strong></td>
+                        <td>LOGICAL</td>
+                        <td><span class="badge flag">Flag</span></td>
+                        <td>Has MSP formation history</td>
+                    </tr>
+                    <tr>
+                        <td><strong>PERIOD(J)</strong></td>
+                        <td>REAL*8</td>
+                        <td><span class="badge output">Output</span></td>
+                        <td>Spin period (seconds)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>PDOT(J)</strong></td>
+                        <td>REAL*8</td>
+                        <td><span class="badge output">Output</span></td>
+                        <td>Period derivative (s/s)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>BMAG(J)</strong></td>
+                        <td>REAL*8</td>
+                        <td><span class="badge output">Output</span></td>
+                        <td>Magnetic field (Gauss)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>XMNS0(J)</strong></td>
+                        <td>REAL*8</td>
+                        <td><span class="badge input">Input</span></td>
+                        <td>Initial NS mass</td>
+                    </tr>
+                    <tr>
+                        <td><strong>AGE0(J)</strong></td>
+                        <td>REAL*8</td>
+                        <td><span class="badge input">Input</span></td>
+                        <td>NS formation time</td>
+                    </tr>
+                </table>
+                
+                <h3>Physical Constants (Namelist /INPULSAR/)</h3>
+                <table class="data-table">
+                    <tr>
+                        <th>Constant</th>
+                        <th>Default Value</th>
+                        <th>Physical Meaning</th>
+                        <th>Used In</th>
+                    </tr>
+                    <tr>
+                        <td><strong>XKFIELD</strong></td>
+                        <td>3.2×10<sup>19</sup> CGS</td>
+                        <td>Dipole radiation coefficient</td>
+                        <td>PDOT_DIPOLE calculation</td>
+                    </tr>
+                    <tr style="background: #fff3cd;">
+                        <td><strong>XKDECAY</strong></td>
+                        <td><del>1.0×10<sup>-8</sup></del> → <strong>0.0</strong></td>
+                        <td>⚠️ REMOVED in v4 (double counting)</td>
+                        <td><del>PDOT_DECAY</del> → Not used</td>
+                    </tr>
+                    <tr style="background: #d4edda;">
+                        <td><strong>XKENV</strong></td>
+                        <td><del>1.0×10<sup>-20</sup></del> → <strong>5.0×10<sup>-29</sup></strong></td>
+                        <td>Environmental torque coefficient (corrected)</td>
+                        <td>PDOT_ENV calculation</td>
+                    </tr>
+                    <tr style="background: #d4edda;">
+                        <td><strong>XKACC</strong></td>
+                        <td><del>1.0×10<sup>-5</sup></del> → <strong>2.0×10<sup>-16</sup></strong></td>
+                        <td>Accretion spin-up efficiency (corrected)</td>
+                        <td>PDOT_ACC (Scenario 3)</td>
+                    </tr>
+                    <tr style="background: #fff3cd;">
+                        <td><strong>XKMERGE</strong></td>
+                        <td><del>0.1</del> → <strong>1.0×10<sup>-22</sup></strong></td>
+                        <td>Merger spin change (needs verification)</td>
+                        <td>PDOT_MERGE (Scenarios 6,7)</td>
+                    </tr>
+                    <tr style="background: #d4edda;">
+                        <td><strong>XKASYM</strong></td>
+                        <td><del>1.0×10<sup>-7</sup></del> → <strong>1.0×10<sup>-27</sup></strong></td>
+                        <td>Asymmetric kick coefficient (corrected)</td>
+                        <td>PDOT_ASYM (VKICK > 200 km/s)</td>
+                    </tr>
+                    <tr style="background: #d4edda;">
+                        <td><strong>XKDYN</strong></td>
+                        <td><del>1.0×10<sup>-8</sup></del> → <strong>1.0×10<sup>-22</sup></strong></td>
+                        <td>Dynamical interaction coefficient (corrected)</td>
+                        <td>PDOT_DYN (Scenario 4)</td>
+                    </tr>
+                    <tr style="background: #fff3cd;">
+                        <td><strong>XKGW</strong></td>
+                        <td><del>1.0×10<sup>-25</sup></del> → <strong>1.2×10<sup>-74</sup></strong></td>
+                        <td>GW coefficient (needs verification from Peters 1964)</td>
+                        <td>PDOT_GW (Close binaries)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>XKTAU</strong></td>
+                        <td>1.0×10<sup>9</sup> years</td>
+                        <td>B-field decay timescale</td>
+                        <td>Exponential B-field decay</td>
+                    </tr>
+                    <tr>
+                        <td><strong>ATHRESH</strong></td>
+                        <td>1.0×10<sup>12</sup> cm</td>
+                        <td>Wide binary threshold</td>
+                        <td>Scenario 5 detection</td>
+                    </tr>
+                </table>
+                <div class="info-box" style="margin-top: 20px;">
+                    <strong>Note on Constants:</strong> The physical constants YI (NS radius = 10<sup>6</sup> cm) and XK (moment of inertia = 10<sup>45</sup> g·cm²) are fixed in the code and not part of the Namelist. The above coefficients control the strength of various physical processes and should be tuned based on observational constraints.
+                </div>
+            </div>
+            
+            <!-- FILE DEPENDENCIES -->
+            <div id="files" class="view">
+                <h2>File Dependencies & Modifications</h2>
+                
+                <div class="info-box">
+                    <strong>📁 Overview</strong>
+                    To implement the pulsar subroutine, 4 main NBODY6++GPU files need modifications and 1 new file is added. Each file has a specific role in the overall architecture. These modifications are designed to have minimal interference with the original simulator code.
+                </div>
+                
+                <h3>File Modification Summary</h3>
+                <table class="data-table" style="margin-bottom: 30px;">
+                    <tr>
+                        <th>File</th>
+                        <th>Modification Type</th>
+                        <th>Role</th>
+                        <th>Lines</th>
+                    </tr>
+                    <tr>
+                        <td><strong>common6.h</strong></td>
+                        <td><span class="badge modified">Modified</span></td>
+                        <td>Define pulsar variables in COMMON/NBODY/</td>
+                        <td>~50</td>
+                    </tr>
+                    <tr>
+                        <td><strong>input.F</strong></td>
+                        <td><span class="badge modified">Modified</span></td>
+                        <td>Read physical constants from Namelist and initialize</td>
+                        <td>~80</td>
+                    </tr>
+                    <tr>
+                        <td><strong>mdot.F</strong></td>
+                        <td><span class="badge modified">Modified</span></td>
+                        <td>Call pulsar subroutine for each NS</td>
+                        <td>~10</td>
+                    </tr>
+                    <tr>
+                        <td><strong>mydump.F</strong></td>
+                        <td><span class="badge modified">Modified</span></td>
+                        <td>Save and restore pulsar state for restart</td>
+                        <td>~60</td>
+                    </tr>
+                    <tr>
+                        <td><strong>calc_and_save_pulsar_params.f</strong></td>
+                        <td><span class="badge new">New File</span></td>
+                        <td>Main pulsar calculation subroutine</td>
+                        <td>~510</td>
+                    </tr>
+                </table>
+                
+                <h3>1. common6.h - Core Data Structures</h3>
+                <p style="margin: 10px 0 15px 0; color: #495057;">
+                    <strong>Role:</strong> This file defines shared data structures between all NBODY6++GPU modules. We add pulsar variables to <code>COMMON/NBODY/</code> so they are accessible in all subroutines.
+                    <br>
+                    <strong>Changes:</strong> Add tracking arrays (NAME0, BODY_PREV, ...), pulsar parameters (PERIOD, PDOT, BMAG, ...), scenario flags (MERGERFLAG, DYNFLAG, ...), and physical constants (YI, XK, XKTAU, ...).
+                </p>
+                <div class="code-block">
+C Add to COMMON/NBODY/ after ASPN:
+      INTEGER NAME0(NMAX), KSTAR_COMP0(NMAX)
+      INTEGER MERGERFLAG(NMAX), DYNFLAG(NMAX)
+      INTEGER ACCRETION_FLAG(NMAX), WIDE_BINARY_FLAG(NMAX)
+      INTEGER MERGER_TYPE(NMAX)
+      
+      REAL*8 XMNS0(NMAX), BMAG(NMAX), AGE0(NMAX), AGEX(NMAX)
+      REAL*8 PERIOD(NMAX), PDOT(NMAX)
+      REAL*8 P_INITIAL(NMAX), B_INITIAL(NMAX), RHO(NMAX)
+      REAL*8 BODY_PREV(NMAX), R_PREV(NMAX), E_BIND0(NMAX)
+      REAL*8 MERGER_TIME(NMAX), EXCHANGE_TIME(NMAX)
+      
+      LOGICAL FIRST_CALL(NMAX), MSPHISTORY(NMAX)
+      
+      REAL*8 YI, XK, XKTAU, XKFIELD, XKDECAY, XKENV
+      REAL*8 XKACC, XKMERGE, XKASYM, XKDYN, XKGW, ATHRESH
+      
+      COMMON/NBODY/ ..., ASPN,
+     &    NAME0, KSTAR_COMP0, MERGERFLAG, DYNFLAG,
+     &    ACCRETION_FLAG, WIDE_BINARY_FLAG, MERGER_TYPE,
+     &    XMNS0, BMAG, AGE0, AGEX, PERIOD, PDOT,
+     &    P_INITIAL, B_INITIAL, RHO,
+     &    BODY_PREV, R_PREV, E_BIND0,
+     &    MERGER_TIME, EXCHANGE_TIME,
+     &    FIRST_CALL, MSPHISTORY,
+     &    YI, XK, XKTAU, XKFIELD, XKDECAY, XKENV,
+     &    XKACC, XKMERGE, XKASYM, XKDYN, XKGW, ATHRESH
+                </div>
+                
+                <h3>2. input.F - Namelist Configuration</h3>
+                <p style="margin: 10px 0 15px 0; color: #495057;">
+                    <strong>Role:</strong> This file reads simulation input parameters from the input file and initializes variables.
+                    <br>
+                    <strong>Changes:</strong> Add new Namelist <code>/INPULSAR/</code> for reading pulsar physical constants, set default values, and initialize arrays. Also broadcast these values in MPI environment.
+                    <br>
+                    <strong>Important:</strong> The Namelist parameters MUST be added to the NBODY6++GPU input file for proper operation.
+                </p>
+                <div class="code-block">
+C Namelist declaration (top of file):
+      NAMELIST /INPULSAR/ XKFIELD, XKDECAY, XKENV, XKACC, XKMERGE,
+     &                    XKASYM, XKDYN, XKGW, XKTAU, ATHRESH
+
+C Required parameters in input file:
+&INPULSAR
+    XKFIELD = 3.2D19      ! Dipole radiation constant  
+    XKDECAY = 0.0D0       ! REMOVED - double counting (was 1.0D-8)
+    XKENV = 5.0D-29       ! Environmental spin-down (corrected from 1.0D-20)
+    XKACC = 2.0D-16       ! Accretion spin-up (corrected from 1.0D-5)
+    XKMERGE = 1.0D-22     ! Merger effects (needs verification)
+    XKASYM = 1.0D-27      ! Asymmetric kicks (corrected from 1.0D-7)
+    XKDYN = 1.0D-22       ! Dynamical interaction (corrected from 1.0D-8)
+    XKGW = 1.2D-74        ! GW constant (needs verification from Peters 1964)
+    XKTAU = 1.0D9         ! B-field decay timescale (years)
+    ATHRESH = 1.0D12      ! Wide binary threshold (cm)
+/
+
+C Initialization (in main body):
+      IF (pulsars) THEN
+         ! Set defaults (CORRECTED in v4)
+         YI = 1.0D6              ! NS radius (cm)
+         XK = 1.0D45             ! Moment of inertia (g·cm²)
+         XKTAU = 1.5773D16       ! B-field decay time (500 Myr in seconds)
+         XKFIELD = 3.2D19        ! Dipole coefficient (calculated)
+         XKDECAY = 0.0D0         ! REMOVED (was causing double counting)
+         XKENV = 5.0D-29         ! Environment coefficient (corrected)
+         XKACC = 2.0D-16         ! Accretion coefficient (corrected)
+         XKMERGE = 1.0D-22       ! Merger coefficient (needs verification)
+         XKASYM = 1.0D-27        ! Asymmetric kick coeff (corrected)
+         XKDYN = 1.0D-22         ! Dynamic interaction coeff (corrected)
+         XKGW = 1.2D-74          ! GW coefficient (needs verification)
+         ATHRESH = 1.0D12        ! Binary threshold (cm)
+         
+         ! Read Namelist (if provided in input file)
+         IF (rank .EQ. 0) THEN
+            READ(NML=inpulsar, IOSTAT=iic, UNIT=5)
+         END IF
+         
+         ! MPI broadcast (parallel runs)
+         IF (n_mpi .GT. 1) THEN
+            CALL MPI_BCAST(YI, 1, MPI_REAL8, 0, MPI_COMM_WORLD, ierr)
+            CALL MPI_BCAST(XK, 1, MPI_REAL8, 0, MPI_COMM_WORLD, ierr)
+            ! ... (broadcast all constants)
+         END IF
+         
+         ! Initialize arrays to zero/false
+         DO I = 1, NMAX
+            NAME0(I) = 0
+            KSTAR_COMP0(I) = 0
+            MERGERFLAG(I) = 0
+            DYNFLAG(I) = 0
+            ACCRETION_FLAG(I) = 0
+            WIDE_BINARY_FLAG(I) = 0
+            XMNS0(I) = 0.0D0
+            BMAG(I) = 0.0D0
+            AGE0(I) = 0.0D0
+            PERIOD(I) = 0.0D0
+            PDOT(I) = 0.0D0
+            FIRST_CALL(I) = .FALSE.
+            MSPHISTORY(I) = .FALSE.
+            ! ... (all arrays)
+         END DO
+      END IF
+                </div>
+                
+                <h3>3. mdot.F - Simplified Calling Sequence</h3>
+                <p style="margin: 10px 0 15px 0; color: #495057;">
+                    <strong>Role:</strong> This file calculates mass change rates and is an appropriate place to call the pulsar subroutine since it's invoked for each particle at every timestep.
+                    <br>
+                    <strong>Changes:</strong> At line ~873, check if the particle is an NS (<code>KSTAR=13</code>). If it's the first time seeing this NS, save its initial mass and formation time (<code>XMNS0</code>, <code>AGE0</code>). Then call the pulsar subroutine.
+                </p>
+                <div class="code-block">
+C At line 873 (approximately) in mdot.F:
+      IF (KSTAR(I) .EQ. 13) THEN
+         ! First time seeing this NS? Initialize formation data
+         IF (XMNS0(I) .EQ. 0.0D0) THEN
+            XMNS0(I) = BODY(I)      ! Save formation mass
+            AGE0(I) = TIME          ! Save formation time
+            BODY_PREV(I) = BODY(I)  ! Initialize tracking
+         END IF
+         
+         ! Call pulsar subroutine
+         CALL calc_and_save_pulsar_params(I)
+      END IF
+                </div>
+                
+                <h3>4. mydump.F - State Persistence</h3>
+                <p style="margin: 10px 0 15px 0; color: #495057;">
+                    <strong>Role:</strong> This file saves and restores simulation state for restart capability.
+                    <br>
+                    <strong>Changes:</strong> Add WRITE and READ sections for all pulsar arrays so their state is preserved during restart. Without these modifications, if the simulation stops and restarts, all pulsar information would be lost.
+                </p>
+                <div class="code-block">
+C Save state (in WRITE section of mydump.F):
+      IF (pulsars) THEN
+         WRITE(1) NAME0
+         WRITE(1) KSTAR_COMP0
+         WRITE(1) MERGERFLAG
+         WRITE(1) DYNFLAG
+         WRITE(1) ACCRETION_FLAG
+         WRITE(1) WIDE_BINARY_FLAG
+         WRITE(1) MERGER_TYPE
+         WRITE(1) XMNS0
+         WRITE(1) BMAG
+         WRITE(1) AGE0
+         WRITE(1) AGEX
+         WRITE(1) PERIOD
+         WRITE(1) PDOT
+         WRITE(1) P_INITIAL
+         WRITE(1) B_INITIAL
+         WRITE(1) RHO
+         WRITE(1) BODY_PREV
+         WRITE(1) R_PREV
+         WRITE(1) E_BIND0
+         WRITE(1) MERGER_TIME
+         WRITE(1) EXCHANGE_TIME
+         WRITE(1) FIRST_CALL
+         WRITE(1) MSPHISTORY
+      END IF
+
+C Restore state (in READ section of mydump.F):
+      IF (pulsars) THEN
+         READ(1) NAME0
+         READ(1) KSTAR_COMP0
+         READ(1) MERGERFLAG
+         READ(1) DYNFLAG
+         READ(1) ACCRETION_FLAG
+         READ(1) WIDE_BINARY_FLAG
+         READ(1) MERGER_TYPE
+         READ(1) XMNS0
+         READ(1) BMAG
+         READ(1) AGE0
+         READ(1) AGEX
+         READ(1) PERIOD
+         READ(1) PDOT
+         READ(1) P_INITIAL
+         READ(1) B_INITIAL
+         READ(1) RHO
+         READ(1) BODY_PREV
+         READ(1) R_PREV
+         READ(1) E_BIND0
+         READ(1) MERGER_TIME
+         READ(1) EXCHANGE_TIME
+         READ(1) FIRST_CALL
+         READ(1) MSPHISTORY
+      END IF
+                </div>
+                
+                <h3>5. calc_and_save_pulsar_params.f - New Subroutine</h3>
+                <p style="margin: 10px 0 15px 0; color: #495057;">
+                    <strong>Role:</strong> The main subroutine that implements all pulsar logic.
+                    <br>
+                    <strong>Location:</strong> <code>src/Main/calc_and_save_pulsar_params.f</code>
+                    <br>
+                    <strong>Compilation:</strong> Must be added to Makefile in <code>src/Main/</code>:
+                </p>
+                <div class="code-block">
+# Add to src/Main/Makefile:
+SOURCES = ... calc_and_save_pulsar_params.f ...
+OBJECTS = ... calc_and_save_pulsar_params.o ...
+
+# The build system will automatically compile it
+                </div>
+                
+                <h3>6. file_init.F - Output File Initialization (NEW in v4.0)</h3>
+                <p style="margin: 10px 0 15px 0; color: #495057;">
+                    <strong>Role:</strong> Initialize the pulsar output file at simulation start.
+                    <br>
+                    <strong>Changes:</strong> Add file opening with KZ control (choose appropriate KZ index).
+                </p>
+                <div class="code-block">
+C Add to file_init.F (choose appropriate KZ index):
+      IF (KZ(XX) .GT. 0) THEN  ! Replace XX with chosen index
+         OPEN(UNIT=55, FILE='pulsar.55', STATUS='UNKNOWN')
+         CLOSE(55)
+      END IF
+
+C Note: The subroutine will append timestamped files like:
+C       pulsar.55_00100000.dat
+C       pulsar.55_00200000.dat
+C       etc.
+                </div>
+            </div>
+            
+            <!-- IMPLEMENTATION -->
+            <div id="implementation" class="view">
+                <h2>Implementation Checklist</h2>
+                
+                <div class="info-box">
+                    <strong>📋 Pre-Implementation Requirements</strong>
+                    <ul style="margin-top: 10px; margin-left: 20px;">
+                        <li>NBODY6++GPU Beijing version (May 2023 or later)</li>
+                        <li>Fortran compiler with MPI support</li>
+                        <li>Write access to source directory</li>
+                        <li>Test dataset (N~1000 for initial testing)</li>
+                    </ul>
+                </div>
+                
+                <h3>Step-by-Step Implementation</h3>
+                
+                <div class="scenario-card">
+                    <h4>Step 1: Backup Original Code</h4>
+                    <p style="margin: 10px 0; color: #495057;">
+                        Before making any changes, create backups of the original files. This allows you to revert to the original version if problems arise. The following files should be backed up:
+                        <br>
+                        <strong>• common6.h</strong> - Shared data structure
+                        <br>
+                        <strong>• input.F</strong> - Input and initialization
+                        <br>
+                        <strong>• mdot.F</strong> - Subroutine calling
+                        <br>
+                        <strong>• mydump.F</strong> - State save and restore
+                    </p>
+                </div>
+                
+                <div class="scenario-card">
+                    <h4>Step 2: Modify common6.h</h4>
+                    <div class="conditions">
+                        <ul>
+                            <li>Open src/Main/common6.h</li>
+                            <li>Find COMMON/NBODY/ declaration</li>
+                            <li>Add pulsar variables after ASPN</li>
+                            <li>Add to COMMON list</li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <div class="scenario-card">
+                    <h4>Step 3: Modify input.F</h4>
+                    <div class="conditions">
+                        <ul>
+                            <li>Add Namelist declaration at top</li>
+                            <li>Add initialization in pulsars section</li>
+                            <li>Include MPI broadcast calls</li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <div class="scenario-card">
+                    <h4>Step 4: Modify mdot.F</h4>
+                    <div class="conditions">
+                        <ul>
+                            <li>Find line 873 (NS treatment)</li>
+                            <li>Replace with simplified call</li>
+                            <li>Add initialization logic</li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <div class="scenario-card">
+                    <h4>Step 5: Modify mydump.F</h4>
+                    <div class="conditions">
+                        <ul>
+                            <li>Add WRITE statements for pulsar state</li>
+                            <li>Add READ statements for restoration</li>
+                            <li>Test with small dump file</li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <div class="scenario-card">
+                    <h4>Step 6: Add New Subroutine</h4>
+                    <div class="code-block">
+cp calc_and_save_pulsar_params_v4.f src/Main/calc_and_save_pulsar_params.f
+                    </div>
+                </div>
+                
+                <div class="scenario-card">
+                    <h4>Step 7: Update Makefile</h4>
+                    <div class="conditions">
+                        <ul>
+                            <li>Add to SOURCES list</li>
+                            <li>Add to OBJECTS list</li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <div class="scenario-card">
+                    <h4>Step 8: Compile & Test</h4>
+                    <p style="margin: 10px 0; color: #495057;">
+                        After applying all modifications, compile the code:
+                        <br><br>
+                        <strong>• Configuration:</strong> Use appropriate flags for your system (e.g., <code>--enable-mcmodel=large --with-par=b100k</code>)
+                        <br>
+                        <strong>• Clean compile:</strong> First run <code>make clean</code> to remove old object files
+                        <br>
+                        <strong>• Parallel build:</strong> Use <code>make -j8</code> for faster compilation
+                        <br>
+                        <strong>• Check executable:</strong> Ensure the executable is created in the <code>build/</code> directory
+                        <br><br>
+                        After successful compilation, run a small test to ensure the subroutine works correctly. The output should include <code>pulsar.55_*.dat</code> files.
+                    </p>
+                </div>
+                
+                <h3>Recommended Initial Conditions for Testing</h3>
+                <div class="warning-box">
+                    <strong>⚙️ Recommended Initial Conditions for Testing</strong>
+                    To ensure proper functionality of the subroutine, it's recommended to start with a simple model and then progress to more complex ones:
+                </div>
+                
+                <table class="data-table">
+                    <tr>
+                        <th>Parameter</th>
+                        <th>Recommended Value for Initial Test</th>
+                        <th>Reason</th>
+                    </tr>
+                    <tr>
+                        <td><strong>Particle Number (N)</strong></td>
+                        <td>500-1000</td>
+                        <td>Small models run faster and are easier to debug</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Metallicity</strong></td>
+                        <td>Z = 0.02 (solar)</td>
+                        <td>Higher probability of NS formation</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Binary Fraction</strong></td>
+                        <td>0.3-0.5</td>
+                        <td>Sufficient binaries to test scenarios 3-7</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Initial Mass Function</strong></td>
+                        <td>Kroupa/Salpeter</td>
+                        <td>Generates sufficient massive stars for NS formation</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Mass Range</strong></td>
+                        <td>0.1-100 M☉</td>
+                        <td>Includes massive stars (>8 M☉) that become NSs</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Simulation Time</strong></td>
+                        <td>100-500 Myr</td>
+                        <td>Enough time for NS formation and evolution</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Output Interval</strong></td>
+                        <td>10-50 Myr</td>
+                        <td>Balance between data volume and time resolution</td>
+                    </tr>
+                    <tr>
+                        <td><strong>King Model (W0)</strong></td>
+                        <td>5-7</td>
+                        <td>Concentrated cluster for dynamical interactions</td>
+                    </tr>
+                </table>
+                
+                <div class="success-box" style="margin-top: 20px;">
+                    <strong>✅ Recommended Testing Steps</strong>
+                    <ol style="margin-left: 20px; margin-top: 10px;">
+                        <li><strong>Compilation test:</strong> First ensure the code compiles without errors</li>
+                        <li><strong>Short test:</strong> Run a 10 Myr simulation with N=500 and verify that <code>pulsar.55_*.dat</code> files are generated</li>
+                        <li><strong>Format check:</strong> Ensure each line has exactly 20 columns</li>
+                        <li><strong>Scenario check:</strong> Verify that SCENARIO_ID column contains values 1-7</li>
+                        <li><strong>Long test:</strong> Run a 500 Myr simulation with N=1000 and plot P-Pdot diagrams</li>
+                        <li><strong>Restart test:</strong> Stop the simulation, then restart from dump file and ensure pulsar state is preserved</li>
+                    </ol>
+                </div>
+                
+                <div class="info-box" style="margin-top: 20px;">
+                    <strong>📊 Signs of Successful Test</strong>
+                    <ul style="margin-left: 20px; margin-top: 10px;">
+                        <li><code>pulsar.55_*.dat</code> files are generated at regular time intervals</li>
+                        <li>Number of NSs increases over time (about 1-5% of N for Z=0.02)</li>
+                        <li>Scenario distribution is logical (scenario 1 most common, scenarios 6-7 rarest)</li>
+                        <li>PERIOD values are in reasonable range (10<sup>-4</sup>-10 seconds)</li>
+                        <li>BMAG values are in reasonable range (10<sup>8</sup>-10<sup>12</sup> Gauss)</li>
+                        <li>P-Pdot diagram resembles observational pulsar diagrams</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <!-- OUTPUT FORMAT -->
+            <div id="output" class="view">
+                <h2>Output Format & Scientific Analysis</h2>
+                
+                <h3>File Naming Convention</h3>
+                <div class="code-block">
+pulsar.55_TTTTTTTT.dat
+
+where TTTTTTTT = INT(TIME*TSTAR) in years
+Example: pulsar.55_01000000.dat → data at 10 Myr
+                </div>
+                
+                <h3>Column Structure (20 columns)</h3>
+                <table class="data-table">
+                    <tr>
+                        <th>#</th>
+                        <th>Name</th>
+                        <th>Unit</th>
+                        <th>Description</th>
+                        <th>Use</th>
+                    </tr>
+                    <tr>
+                        <td>1</td>
+                        <td>TIME</td>
+                        <td>years</td>
+                        <td>Simulation time</td>
+                        <td>Evolution tracking</td>
+                    </tr>
+                    <tr>
+                        <td>2</td>
+                        <td>NAME</td>
+                        <td>-</td>
+                        <td>Particle ID</td>
+                        <td>Individual tracking</td>
+                    </tr>
+                    <tr>
+                        <td>3</td>
+                        <td>KSTAR</td>
+                        <td>-</td>
+                        <td>Stellar type (13=NS)</td>
+                        <td>Verification</td>
+                    </tr>
+                    <tr>
+                        <td>4</td>
+                        <td><strong>PERIOD</strong></td>
+                        <td>s</td>
+                        <td>Spin period</td>
+                        <td><strong>P-Pdot, P-B, P-E plots</strong></td>
+                    </tr>
+                    <tr>
+                        <td>5</td>
+                        <td><strong>PDOT</strong></td>
+                        <td>s/s</td>
+                        <td>Period derivative</td>
+                        <td><strong>P-Pdot plot</strong></td>
+                    </tr>
+                    <tr>
+                        <td>6</td>
+                        <td><strong>BMAG</strong></td>
+                        <td>G</td>
+                        <td>Magnetic field</td>
+                        <td><strong>P-B plot</strong></td>
+                    </tr>
+                    <tr>
+                        <td>7-9</td>
+                        <td>X, Y, Z</td>
+                        <td>cm</td>
+                        <td>Position</td>
+                        <td>Spatial distribution</td>
+                    </tr>
+                    <tr>
+                        <td>10-12</td>
+                        <td>VX, VY, VZ</td>
+                        <td>cm/s</td>
+                        <td>Velocity</td>
+                        <td>Kinematics</td>
+                    </tr>
+                    <tr>
+                        <td>13-15</td>
+                        <td>FX, FY, FZ</td>
+                        <td>-</td>
+                        <td>Force</td>
+                        <td>Dynamics</td>
+                    </tr>
+                    <tr>
+                        <td>16</td>
+                        <td><strong>E_TOTAL</strong></td>
+                        <td>erg</td>
+                        <td>Total energy</td>
+                        <td><strong>P-E plot</strong></td>
+                    </tr>
+                    <tr>
+                        <td>17</td>
+                        <td>E_BINDING</td>
+                        <td>erg</td>
+                        <td>Binary binding energy</td>
+                        <td>Binary evolution</td>
+                    </tr>
+                    <tr>
+                        <td>18</td>
+                        <td><strong>SCENARIO</strong></td>
+                        <td>-</td>
+                        <td>Evolutionary scenario (1-7)</td>
+                        <td><strong>Classification</strong></td>
+                    </tr>
+                    <tr>
+                        <td>19</td>
+                        <td>LAT</td>
+                        <td>deg</td>
+                        <td>Latitude</td>
+                        <td>Spatial analysis</td>
+                    </tr>
+                    <tr>
+                        <td>20</td>
+                        <td>LON</td>
+                        <td>deg</td>
+                        <td>Longitude</td>
+                        <td>Spatial analysis</td>
+                    </tr>
+                </table>
+                
+                <h3>Example Data</h3>
+                <div class="code-block">
+1.000E+08  10042  13  2.534E-02  1.234E-15  3.456E+11  1.23E+18  4.56E+17  ...
+1.000E+08  10043  13  1.002E-02  5.678E-16  8.901E+11  2.34E+18  5.67E+17  ...
+...
+                </div>
+                
+                <h3>Expected Results</h3>
+                <ul style="margin-left: 30px; margin-top: 15px; line-height: 1.8;">
+                    <li><strong>Scenario 1 (Isolated):</strong> Standard pulsars, P~0.1-1s, Pdot~10^-15</li>
+                    <li><strong>Scenario 2 (Isolated MSP):</strong> Fast rotation, P~1-30ms, Pdot~10^-19-10^-17</li>
+                    <li><strong>Scenario 3 (Accreting MSP):</strong> Spin-up phase, decreasing P</li>
+                    <li><strong>Scenario 4 (Dynamic MSP):</strong> Post-exchange, varied P</li>
+                    <li><strong>Scenario 5 (Wide Binary):</strong> Similar to isolated, slow evolution</li>
+                    <li><strong>Scenario 6 (NS-NS):</strong> Pre-merger, P could vary, strong GW</li>
+                    <li><strong>Scenario 7 (NS-BH):</strong> Pre-disruption, tidal effects</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        function showView(viewId) {
+            document.querySelectorAll('.view').forEach(view => {
+                view.classList.remove('active');
+            });
+            
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            
+            document.getElementById(viewId).classList.add('active');
+            event.target.classList.add('active');
+            
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+    </script>
+</body>
+</html>

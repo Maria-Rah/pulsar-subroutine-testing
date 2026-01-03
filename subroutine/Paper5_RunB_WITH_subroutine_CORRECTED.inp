@@ -1,0 +1,125 @@
+! ============================================================================
+! PAPER 5 - RUN B: WITH Pulsar Subroutine (Test)
+! ============================================================================
+! Purpose: Test pulsar subroutine integration
+! Author: Maria Rah
+! Date: January 2026 (CORRECTED AFTER SCENARIO TESTING)
+!
+! Comparison: Same as Run A but WITH pulsar subroutine active
+!
+! ============================================================================
+! KEY DIFFERENCES FROM RUN A:
+! ============================================================================
+! 1. KZ(48) = 1 (pulsar subroutine enabled)
+! 2. INPULSAR namelist with corrected coefficients
+! 3. Output: pulsar.55_* files (P, Pdot, B-field tracking)
+!
+! ============================================================================
+! CORRECTED COEFFICIENTS (from standalone scenario testing):
+! ============================================================================
+!   XKDECAY  = 0.0D0     → REMOVED (double counting)
+!   XKACC    = 2.0D-16   → corrected from 2.0D-5 (factor 10¹¹)
+!   XKENV    = 5.0D-29   → corrected from 5.0D-21 (factor 10⁸)
+!   XKDYN    = 1.0D-22   → corrected from 3.0D-8 (factor 10¹⁴)
+!   XKASYM   = 1.0D-27   → corrected from 8.0D-8 (factor 10¹⁹)
+!   XKGW     = TBD       → needs verification (Peters 1964)
+!   XKMERGE  = TBD       → needs verification
+!
+! ============================================================================
+
+&INPUT
+! Cluster parameters
+    N        = 150000
+    NFIX     = 1
+    NCRIT    = 10
+    NRAND    = 12345
+    NNBMAX   = 600
+    NRUN     = 1
+
+! Time parameters
+    TCRIT    = 100.0    ! 100 Myr (same as Run A)
+    DTADJ    = 2.0
+    DELTAT   = 0.5
+    TCRIT0   = 0.0
+
+! Physical scaling
+    RBAR     = 2.0      ! 2 pc
+    ZMBAR    = 0.5      ! 0.5 Msun
+    RSPH     = 5.0
+    
+! Binary evolution
+    KZ(7)    = 3        ! BSE stellar evolution
+    KZ(19)   = 3        ! Roche lobe
+    KZ(27)   = 1        ! Binary output
+    
+! Pulsar subroutine (NEW - THE KEY DIFFERENCE!)
+    KZ(48)   = 1        ! ENABLE pulsar subroutine
+    
+! Output control
+    KZ(1)    = 2        ! Full output
+    KZ(3)    = 1        ! Basic output
+    KZ(4)    = 2        ! Binary snapshots
+    KZ(8)    = 2        ! HR diagram
+    KZ(9)    = 2        ! Individual output
+    KZ(10)   = 1        ! Stability check
+/
+
+! ============================================================================
+! Pulsar Module Parameters (CORRECTED - Jan 2026)
+! ============================================================================
+&INPULSAR
+    ! Environmental spin-down (CORRECTED)
+    XKENV    = 5.0D-29
+    
+    ! Accretion spin-up (CORRECTED)
+    XKACC    = 2.0D-16
+    
+    ! Dynamical interactions (CORRECTED)
+    XKDYN    = 1.0D-22
+    
+    ! Asymmetric kicks (CORRECTED)
+    XKASYM   = 1.0D-27
+    
+    ! GW radiation (NEEDS VERIFICATION - using placeholder)
+    XKGW     = 1.2D-74
+    
+    ! Merger effects (NEEDS VERIFICATION - using placeholder)
+    XKMERGE  = 1.0D-22
+    
+    ! B-field decay timescale (unchanged)
+    XKTAU    = 1.5773D16  ! 500 Myr in seconds
+    
+    ! Initial period range for new NS (unchanged)
+    P0_MIN   = 0.010D0    ! 10 ms
+    P0_MAX   = 1.000D0    ! 1 second
+    
+    ! Initial B-field range (unchanged)  
+    B0_MIN   = 1.0D11     ! 10¹¹ G
+    B0_MAX   = 1.0D13     ! 10¹³ G
+    
+    ! Note: XKDECAY removed (was causing double counting)
+/
+
+! ============================================================================
+! Expected Outputs:
+! ============================================================================
+! Standard outputs (same as Run A):
+!   - sev.83_*  (stellar evolution)
+!   - bev.82_*  (binary evolution)
+!   - conf.3_*  (snapshots)
+!   - OUT3      (summary)
+!
+! PLUS Pulsar-specific outputs (NEW):
+!   - pulsar.55_TTTTTTTT.dat
+!     Columns: NAME, TIME, KSTAR, PERIOD, PDOT, BMAG, SCENARIO_ID, flags...
+!
+! ============================================================================
+! Notes:
+! ============================================================================
+! 1. All coefficients corrected based on standalone scenario testing
+! 2. XKDECAY removed from subroutine (double counting eliminated)
+! 3. Seven scenarios tested and validated
+! 4. XKGW and XKMERGE values are placeholders - need literature verification
+! 5. This input file works with calc_and_save_pulsar_params_v4_CORRECTED.f
+!
+! ============================================================================

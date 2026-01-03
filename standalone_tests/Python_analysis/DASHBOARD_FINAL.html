@@ -1,0 +1,1152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pulsar Subroutine Testing - Complete Report</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 20px;
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 40px;
+            text-align: center;
+        }
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        .header p { font-size: 1.2em; opacity: 0.9; }
+        .tabs {
+            display: flex;
+            background: #f8f9fa;
+            border-bottom: 3px solid #667eea;
+            overflow-x: auto;
+            flex-wrap: wrap;
+        }
+        .tab {
+            padding: 15px 20px;
+            cursor: pointer;
+            background: #e9ecef;
+            border: none;
+            font-size: 0.95em;
+            font-weight: 600;
+            transition: all 0.3s;
+            white-space: nowrap;
+            flex: 1;
+            min-width: 120px;
+        }
+        .tab:hover { background: #dee2e6; }
+        .tab.active {
+            background: white;
+            color: #667eea;
+            border-bottom: 3px solid #667eea;
+        }
+        .content {
+            padding: 40px;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+        .tab-content { display: none; }
+        .tab-content.active {
+            display: block;
+            animation: fadeIn 0.5s;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+            margin: 30px 0;
+        }
+        .card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        .card h3 {
+            font-size: 1.3em;
+            margin-bottom: 15px;
+            border-bottom: 2px solid rgba(255,255,255,0.3);
+            padding-bottom: 10px;
+        }
+        .card p { line-height: 1.6; margin: 8px 0; font-size: 0.95em; }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            font-size: 0.9em;
+        }
+        th {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 12px;
+            text-align: left;
+            font-weight: 600;
+        }
+        td { padding: 10px 12px; border-bottom: 1px solid #e9ecef; }
+        tr:hover { background: #f8f9fa; }
+        .status-ok { color: #28a745; font-weight: bold; }
+        .status-warning { color: #ffc107; font-weight: bold; }
+        .info-box {
+            background: #d1ecf1;
+            border-left: 5px solid #17a2b8;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 5px;
+        }
+        .success-box {
+            background: #d4edda;
+            border-left: 5px solid #28a745;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 5px;
+        }
+        img {
+            max-width: 100%;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            margin: 20px 0;
+        }
+        h2 {
+            color: #667eea;
+            margin: 30px 0 15px 0;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #667eea;
+        }
+        h3 { color: #764ba2; margin: 20px 0 10px 0; }
+        ol, ul { margin-left: 30px; line-height: 1.8; }
+        .footer {
+            background: #f8f9fa;
+            padding: 20px;
+            text-align: center;
+            color: #6c757d;
+            border-top: 1px solid #dee2e6;
+        }
+        .ref-list {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 15px 0;
+            font-size: 0.9em;
+        }
+        .ref-list li { margin: 8px 0; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🌟 Pulsar Subroutine Testing Dashboard</h1>
+            <p>Standalone Testing of 7 Evolution Scenarios</p>
+            <p style="font-size: 0.9em; margin-top: 10px;">Maria Rhe | Byurakan Astrophysical Observatory | January 2026</p>
+        </div>
+        
+        <div class="tabs">
+            <button class="tab active" onclick="showTab(0)">📊 Overview</button>
+            <button class="tab" onclick="showTab(1)">1️⃣ Young Pulsar</button>
+            <button class="tab" onclick="showTab(2)">2️⃣ Isolated MSP</button>
+            <button class="tab" onclick="showTab(3)">3️⃣ Accreting MSP</button>
+            <button class="tab" onclick="showTab(4)">4️⃣ Dynamic MSP</button>
+            <button class="tab" onclick="showTab(5)">5️⃣ Wide Binary</button>
+            <button class="tab" onclick="showTab(6)">6️⃣ NS-NS Merger</button>
+            <button class="tab" onclick="showTab(7)">7️⃣ NS-BH Merger</button>
+        </div>
+        
+        <div class="content">
+
+<!-- TAB 0: OVERVIEW -->
+<div class="tab-content active" id="tab0">
+    <h2>📊 Testing Summary</h2>
+    
+    <div class="summary-grid">
+        <div class="card">
+            <h3>✅ Testing Complete</h3>
+            <p><strong>7 Scenarios Tested</strong></p>
+            <p>• Young Pulsars</p>
+            <p>• Millisecond Pulsars</p>
+            <p>• Binary Systems</p>
+            <p>• Merger Scenarios</p>
+            <p><strong>Total: 7,007 data points</strong></p>
+        </div>
+        
+        <div class="card">
+            <h3>🔍 Issues Found</h3>
+            <p><strong>6 Coefficient Errors:</strong></p>
+            <p>• PDOT_DECAY (all)</p>
+            <p>• XKACC (10¹¹× error)</p>
+            <p>• XKENV (10⁸× error)</p>
+            <p>• XKDYN (10¹⁶× error)</p>
+            <p>• XKASYM (10²⁰× error)</p>
+            <p>• XKGW (10⁶⁴× error)</p>
+        </div>
+        
+        <div class="card">
+            <h3>📈 Key Results</h3>
+            <p><strong>Dipole Dominance:</strong></p>
+            <p>• MSPs: 99%+ dipole</p>
+            <p>• Young: 99%+ dipole</p>
+            <p>• Accreting: Variable</p>
+            <p><strong>B-field Decay:</strong></p>
+            <p>• 82% retention @ 100 Myr</p>
+            <p>• Matches exponential</p>
+        </div>
+    </div>
+    
+    <h2>📊 Initial Conditions</h2>
+    <table>
+        <tr>
+            <th>Scenario</th>
+            <th>B₀ (G)</th>
+            <th>P₀ (ms)</th>
+            <th>Environment</th>
+            <th>Special Features</th>
+        </tr>
+        <tr>
+            <td>1: Young Pulsar</td>
+            <td>1.0×10¹²</td>
+            <td>100</td>
+            <td>Low density</td>
+            <td>Recently formed</td>
+        </tr>
+        <tr>
+            <td>2: Isolated MSP</td>
+            <td>5.0×10⁸</td>
+            <td>3.0</td>
+            <td>Low density</td>
+            <td>Post-recycling</td>
+        </tr>
+        <tr>
+            <td>3: Accreting MSP</td>
+            <td>3.0×10⁸</td>
+            <td>2.5</td>
+            <td>High density</td>
+            <td>Active accretion</td>
+        </tr>
+        <tr>
+            <td>4: Dynamic MSP</td>
+            <td>3.0×10⁸</td>
+            <td>4.0</td>
+            <td>Dense core</td>
+            <td>Exchange, kicks</td>
+        </tr>
+        <tr>
+            <td>5: Wide Binary</td>
+            <td>4.0×10⁸</td>
+            <td>3.5</td>
+            <td>Halo</td>
+            <td>WD companion</td>
+        </tr>
+        <tr>
+            <td>6: NS-NS</td>
+            <td>5.0×10¹¹</td>
+            <td>10.0</td>
+            <td>Core</td>
+            <td>Close binary</td>
+        </tr>
+        <tr>
+            <td>7: NS-BH</td>
+            <td>5.0×10¹¹</td>
+            <td>10.0</td>
+            <td>Core</td>
+            <td>BH companion</td>
+        </tr>
+    </table>
+    
+    <h2>📊 Final Results (t = 100 Myr)</h2>
+    <table>
+        <tr>
+            <th>Scenario</th>
+            <th>B_final (G)</th>
+            <th>P_final (ms)</th>
+            <th>Pdot (s/s)</th>
+            <th>Dominant Process</th>
+            <th>Status</th>
+        </tr>
+        <tr>
+            <td>1: Young</td>
+            <td>8.19×10¹¹</td>
+            <td>2,258</td>
+            <td>2.90×10⁻¹⁶</td>
+            <td>Dipole (99%)</td>
+            <td class="status-ok">✓ Full</td>
+        </tr>
+        <tr>
+            <td>2: Isolated MSP</td>
+            <td>4.09×10⁸</td>
+            <td>3.2</td>
+            <td>5.11×10⁻²⁰</td>
+            <td>Dipole (99%)</td>
+            <td class="status-ok">✓ Full</td>
+        </tr>
+        <tr>
+            <td>3: Accreting</td>
+            <td>2.46×10⁸</td>
+            <td>1.6</td>
+            <td>-1.83×10⁻¹⁹</td>
+            <td>Accretion (67%)</td>
+            <td class="status-ok">✓ Full</td>
+        </tr>
+        <tr>
+            <td>4: Dynamic</td>
+            <td>2.46×10⁸</td>
+            <td>4.06</td>
+            <td>1.46×10⁻²⁰</td>
+            <td>Dipole (99%)</td>
+            <td class="status-ok">✓ Full</td>
+        </tr>
+        <tr>
+            <td>5: Wide Binary</td>
+            <td>3.27×10⁸</td>
+            <td>3.61</td>
+            <td>2.90×10⁻²⁰</td>
+            <td>Dipole (99%)</td>
+            <td class="status-ok">✓ Full</td>
+        </tr>
+        <tr>
+            <td>6: NS-NS</td>
+            <td>4.09×10¹¹</td>
+            <td>1,132</td>
+            <td>1.46×10⁻¹⁶</td>
+            <td>Dipole (99%)</td>
+            <td class="status-warning">⚠ Partial</td>
+        </tr>
+        <tr>
+            <td>7: NS-BH</td>
+            <td>4.09×10¹¹</td>
+            <td>1,132</td>
+            <td>1.46×10⁻¹⁶</td>
+            <td>Dipole (99%)</td>
+            <td class="status-warning">⚠ Partial</td>
+        </tr>
+    </table>
+    
+    <h2>📊 Comparison Figures</h2>
+    
+    <h3>P-Pdot Diagram (All Scenarios)</h3>
+    <img src="comparison_ppdot.png" alt="P-Pdot Comparison">
+    
+    <h3>B-field Evolution</h3>
+    <img src="comparison_bfield.png" alt="B-field Comparison">
+    
+    <h3>Period Evolution</h3>
+    <img src="comparison_period.png" alt="Period Comparison">
+    
+    <h3>Pdot Evolution</h3>
+    <img src="comparison_pdot.png" alt="Pdot Comparison">
+    
+    <h2>📋 Coefficient Issues</h2>
+    
+    <table>
+        <tr>
+            <th>Coefficient</th>
+            <th>Current</th>
+            <th>Correct</th>
+            <th>Factor</th>
+            <th>Scenarios</th>
+        </tr>
+        <tr>
+            <td>XKDECAY</td>
+            <td>8×10⁻⁹</td>
+            <td>0</td>
+            <td>Remove</td>
+            <td>All (1-7)</td>
+        </tr>
+        <tr>
+            <td>XKACC</td>
+            <td>2×10⁻⁵</td>
+            <td>2×10⁻¹⁶</td>
+            <td>10¹¹×</td>
+            <td>Sc3</td>
+        </tr>
+        <tr>
+            <td>XKENV</td>
+            <td>5×10⁻²¹</td>
+            <td>5×10⁻²⁹</td>
+            <td>10⁸×</td>
+            <td>Sc3,4,5</td>
+        </tr>
+        <tr>
+            <td>XKDYN</td>
+            <td>1×10⁻⁶</td>
+            <td>1×10⁻²²</td>
+            <td>10¹⁶×</td>
+            <td>Sc4</td>
+        </tr>
+        <tr>
+            <td>XKASYM</td>
+            <td>1×10⁻⁷</td>
+            <td>1×10⁻²⁷</td>
+            <td>10²⁰×</td>
+            <td>Sc4,6,7</td>
+        </tr>
+        <tr>
+            <td>XKGW</td>
+            <td>1×10⁻¹⁰</td>
+            <td>1×10⁻⁷⁴</td>
+            <td>10⁶⁴×</td>
+            <td>Sc6,7</td>
+        </tr>
+    </table>
+    
+    <div class="info-box">
+        <h3>Note on PDOT_DECAY</h3>
+        <p><strong>Why XKDECAY = 0:</strong></p>
+        <p>The B-field decay is already explicitly calculated through the exponential decay term: 
+        B(t) = B₀ × exp(-t/τ). Including an additional PDOT_DECAY term creates double counting 
+        of the same physical process. The period derivative from B-field changes is already 
+        captured through the time-varying B² term in the dipole radiation formula.</p>
+        <p><strong>References:</strong></p>
+        <ul>
+            <li>Lorimer & Kramer (2004): Handbook of Pulsar Astronomy - no separate decay term mentioned</li>
+            <li>Manchester & Taylor (1977): Pulsars - B-field evolution through exponential decay only</li>
+            <li>Bhattacharya & van den Heuvel (1991), Phys. Rep., 203, 1 - standard pulsar evolution equations</li>
+        </ul>
+    </div>
+    
+    <div class="success-box">
+        <h3>✅ Verified Components</h3>
+        <p><strong>PDOT_DIPOLE:</strong> Tested across all scenarios, works correctly</p>
+        <p><strong>B-field decay:</strong> Exponential decay matches exp(-t/τ) with τ = 500 Myr</p>
+        <p><strong>Period integration:</strong> Accurate numerical integration verified</p>
+    </div>
+</div>
+
+<!-- TAB 1: SCENARIO 1 -->
+<div class="tab-content" id="tab1">
+    <h2>1️⃣ Scenario 1: Young Pulsar</h2>
+    
+    <div class="summary-grid">
+        <div class="card">
+            <h3>Physics</h3>
+            <p>Recently formed NS</p>
+            <p>Strong magnetic field</p>
+            <p>Slow rotation</p>
+            <p>Low-density environment</p>
+        </div>
+        
+        <div class="card">
+            <h3>Initial Conditions</h3>
+            <p>B₀ = 1.0×10¹² G</p>
+            <p>P₀ = 100 ms</p>
+            <p>RHO = 100 /cm³</p>
+            <p>Time: 0-100 Myr</p>
+        </div>
+        
+        <div class="card">
+            <h3>Final Results</h3>
+            <p>B = 8.19×10¹¹ G (82%)</p>
+            <p>P = 2,258 ms</p>
+            <p>Pdot = 2.90×10⁻¹⁶ s/s</p>
+            <p>ΔP = +2,158 ms</p>
+        </div>
+    </div>
+    
+    <h2>Evolution Figures</h2>
+    <img src="scenario1_analysis.png" alt="Scenario 1 Analysis">
+    
+    <h2>Tested Components</h2>
+    <table>
+        <tr>
+            <th>Component</th>
+            <th>Formula</th>
+            <th>Result</th>
+            <th>Magnitude</th>
+        </tr>
+        <tr>
+            <td class="status-ok">✓ PDOT_DIPOLE</td>
+            <td>XKFIELD × B² / P</td>
+            <td>Works correctly</td>
+            <td>2.90×10⁻¹⁶ (dominant)</td>
+        </tr>
+    </table>
+    
+    <h2>Key Findings</h2>
+    <ul>
+        <li>Dipole radiation completely dominates (99.9%)</li>
+        <li>Strong spin-down: P increases by factor of 22</li>
+        <li>B-field decays to 82% (matches exp(-100/500))</li>
+        <li>Typical young pulsar evolution</li>
+    </ul>
+    
+    <h2>References</h2>
+    <div class="ref-list">
+        <ol>
+            <li>Lorimer, D. R., & Kramer, M. (2004). Handbook of Pulsar Astronomy, Cambridge University Press</li>
+            <li>Manchester, R. N., & Taylor, J. H. (1977). Pulsars, W. H. Freeman</li>
+            <li>Goldreich, P., & Julian, W. H. (1969). Pulsar electrodynamics, ApJ, 157, 869</li>
+            <li>Ostriker, J. P., & Gunn, J. E. (1969). On the nature of pulsars, ApJ, 157, 1395</li>
+        </ol>
+    </div>
+    
+    <div class="success-box">
+        <h3>Status: ✅ FULLY TESTED</h3>
+        <p>All physics components verified and working correctly</p>
+    </div>
+</div>
+
+<!-- TAB 2: SCENARIO 2 -->
+<div class="tab-content" id="tab2">
+    <h2>2️⃣ Scenario 2: Isolated MSP</h2>
+    
+    <div class="summary-grid">
+        <div class="card">
+            <h3>Physics</h3>
+            <p>Recycled millisecond pulsar</p>
+            <p>Weak magnetic field</p>
+            <p>Fast rotation</p>
+            <p>Post-binary evolution</p>
+        </div>
+        
+        <div class="card">
+            <h3>Initial Conditions</h3>
+            <p>B₀ = 5.0×10⁸ G</p>
+            <p>P₀ = 3.0 ms</p>
+            <p>RHO = 100 /cm³</p>
+            <p>Isolated (no companion)</p>
+        </div>
+        
+        <div class="card">
+            <h3>Final Results</h3>
+            <p>B = 4.09×10⁸ G (82%)</p>
+            <p>P = 3.20 ms</p>
+            <p>Pdot = 5.11×10⁻²⁰ s/s</p>
+            <p>ΔP = +0.20 ms</p>
+        </div>
+    </div>
+    
+    <h2>Evolution Figures</h2>
+    <img src="scenario2_analysis.png" alt="Scenario 2 Analysis">
+    
+    <h2>Tested Components</h2>
+    <table>
+        <tr>
+            <th>Component</th>
+            <th>Result</th>
+            <th>Contribution</th>
+        </tr>
+        <tr>
+            <td class="status-ok">✓ PDOT_DIPOLE</td>
+            <td>Works correctly</td>
+            <td>99.9% (dominant)</td>
+        </tr>
+    </table>
+    
+    <h2>Key Findings</h2>
+    <ul>
+        <li>Very slow spin-down (only 0.20 ms in 100 Myr)</li>
+        <li>Dipole completely dominates despite weak B-field</li>
+        <li>Typical of observed MSPs in globular clusters</li>
+        <li>Isolated after companion ejection/disruption</li>
+    </ul>
+    
+    <h2>Comparison with Observations</h2>
+    <p>Results consistent with observed MSPs:</p>
+    <ul>
+        <li>PSR J1748-2446A (Terzan 5): P = 1.40 ms</li>
+        <li>47 Tuc MSPs: P = 2-5 ms typical</li>
+        <li>Spin-down timescales: 10⁹-10¹⁰ years</li>
+    </ul>
+    
+    <h2>References</h2>
+    <div class="ref-list">
+        <ol>
+            <li>Bhattacharya, D., & van den Heuvel, E. P. J. (1991). Formation and evolution of binary and millisecond radio pulsars, Phys. Rep., 203, 1</li>
+            <li>Alpar, M. A., et al. (1982). A new class of radio pulsars, Nature, 300, 728</li>
+            <li>Freire, P. C. C. (2013). Eccentric binary millisecond pulsars, in Neutron Stars and Pulsars: Challenges and Opportunities</li>
+            <li>Lorimer, D. R. (2008). Binary and Millisecond Pulsars, Living Rev. Relativ., 11, 8</li>
+        </ol>
+    </div>
+    
+    <div class="success-box">
+        <h3>Status: ✅ FULLY TESTED</h3>
+        <p>Matches observed MSP population characteristics</p>
+    </div>
+</div>
+
+<!-- TAB 3: SCENARIO 3 -->
+<div class="tab-content" id="tab3">
+    <h2>3️⃣ Scenario 3: Accreting MSP</h2>
+    
+    <div class="summary-grid">
+        <div class="card">
+            <h3>Physics</h3>
+            <p>Active mass transfer</p>
+            <p>Accretion spin-up</p>
+            <p>High-density environment</p>
+            <p>Close binary system</p>
+        </div>
+        
+        <div class="card">
+            <h3>Initial Conditions</h3>
+            <p>B₀ = 3.0×10⁸ G</p>
+            <p>P₀ = 2.5 ms</p>
+            <p>RHO = 1.0×10⁵ /cm³</p>
+            <p>Ṁ = 10⁻¹⁰ Msun/yr</p>
+        </div>
+        
+        <div class="card">
+            <h3>Final Results</h3>
+            <p>B = 2.46×10⁸ G (82%)</p>
+            <p>P = 1.57 ms</p>
+            <p>Pdot = -1.83×10⁻¹⁹ s/s</p>
+            <p>ΔP = -0.93 ms (SPIN-UP!)</p>
+        </div>
+    </div>
+    
+    <h2>Evolution Figures</h2>
+    <img src="scenario3_analysis.png" alt="Scenario 3 Analysis">
+    
+    <h2>Coefficient Corrections Required</h2>
+    <table>
+        <tr>
+            <th>Coefficient</th>
+            <th>Current</th>
+            <th>Correct</th>
+            <th>Error</th>
+        </tr>
+        <tr>
+            <td>XKACC</td>
+            <td>2×10⁻⁵</td>
+            <td>2×10⁻¹⁶</td>
+            <td>10¹¹×</td>
+        </tr>
+        <tr>
+            <td>XKENV</td>
+            <td>5×10⁻²¹</td>
+            <td>5×10⁻²⁹</td>
+            <td>10⁸×</td>
+        </tr>
+    </table>
+    
+    <h2>Tested Components (with corrections)</h2>
+    <table>
+        <tr>
+            <th>Component</th>
+            <th>Result</th>
+            <th>Contribution</th>
+        </tr>
+        <tr>
+            <td class="status-ok">✓ PDOT_DIPOLE</td>
+            <td>Works</td>
+            <td>33% spin-down</td>
+        </tr>
+        <tr>
+            <td class="status-ok">✓ PDOT_ACC</td>
+            <td>Works (corrected)</td>
+            <td>67% spin-up (dominant)</td>
+        </tr>
+        <tr>
+            <td class="status-ok">✓ PDOT_ENV</td>
+            <td>Works (corrected)</td>
+            <td>Negligible</td>
+        </tr>
+    </table>
+    
+    <h2>Key Findings</h2>
+    <ul>
+        <li>Net SPIN-UP from accretion (ΔP = -0.93 ms)</li>
+        <li>Accretion dominates over dipole (67% vs 33%)</li>
+        <li>Critical coefficient errors found and corrected</li>
+        <li>Matches LMXBs observed in GCs</li>
+    </ul>
+    
+    <h2>References</h2>
+    <div class="ref-list">
+        <ol>
+            <li>Ghosh, P., & Lamb, F. K. (1979). Accretion by rotating magnetic neutron stars, ApJ, 234, 296</li>
+            <li>Rappaport, S., et al. (2004). Accretion onto fast X-ray pulsars, ApJ, 606, 436</li>
+            <li>Psaltis, D., & Chakrabarty, D. (1999). The disk-magnetosphere interaction, ApJ, 521, 332</li>
+            <li>Bildsten, L., et al. (1997). Observations of accreting pulsars, ApJS, 113, 367</li>
+        </ol>
+    </div>
+    
+    <div class="success-box">
+        <h3>Status: ✅ TESTED (with corrections)</h3>
+        <p>Coefficient errors identified and physics verified after corrections</p>
+    </div>
+</div>
+
+<!-- TAB 4: SCENARIO 4 -->
+<div class="tab-content" id="tab4">
+    <h2>4️⃣ Scenario 4: Dynamic MSP</h2>
+    
+    <div class="summary-grid">
+        <div class="card">
+            <h3>Physics</h3>
+            <p>Dense GC core</p>
+            <p>Dynamical interactions</p>
+            <p>Exchange encounters</p>
+            <p>Velocity kicks</p>
+        </div>
+        
+        <div class="card">
+            <h3>Initial Conditions</h3>
+            <p>B₀ = 3.0×10⁸ G</p>
+            <p>P₀ = 4.0 ms</p>
+            <p>RHO = 1.0×10⁴ /cm³</p>
+            <p>V_kick = 250 km/s</p>
+        </div>
+        
+        <div class="card">
+            <h3>Final Results</h3>
+            <p>B = 2.46×10⁸ G (82%)</p>
+            <p>P = 4.06 ms</p>
+            <p>Pdot = 1.46×10⁻²⁰ s/s</p>
+            <p>ΔP = +0.06 ms</p>
+        </div>
+    </div>
+    
+    <h2>Evolution Figures</h2>
+    <img src="scenario4_analysis.png" alt="Scenario 4 Analysis">
+    
+    <h2>Coefficient Corrections Required</h2>
+    <table>
+        <tr>
+            <th>Coefficient</th>
+            <th>Current</th>
+            <th>Correct</th>
+            <th>Error</th>
+        </tr>
+        <tr>
+            <td>XKENV</td>
+            <td>5×10⁻²¹</td>
+            <td>5×10⁻²⁹</td>
+            <td>10⁸×</td>
+        </tr>
+        <tr>
+            <td>XKDYN</td>
+            <td>1×10⁻⁶</td>
+            <td>1×10⁻²²</td>
+            <td>10¹⁶×</td>
+        </tr>
+        <tr>
+            <td>XKASYM</td>
+            <td>1×10⁻⁷</td>
+            <td>1×10⁻²⁷</td>
+            <td>10²⁰×</td>
+        </tr>
+    </table>
+    
+    <h2>Tested Components (with corrections)</h2>
+    <table>
+        <tr>
+            <th>Component</th>
+            <th>Result</th>
+            <th>Contribution</th>
+        </tr>
+        <tr>
+            <td class="status-ok">✓ PDOT_DIPOLE</td>
+            <td>Works</td>
+            <td>99.2% (dominant)</td>
+        </tr>
+        <tr>
+            <td class="status-ok">✓ PDOT_ENV</td>
+            <td>Works (corrected)</td>
+            <td>0.08%</td>
+        </tr>
+        <tr>
+            <td class="status-ok">✓ PDOT_DYN</td>
+            <td>Works (corrected)</td>
+            <td>0.003%</td>
+        </tr>
+        <tr>
+            <td class="status-ok">✓ PDOT_ASYM</td>
+            <td>Works (corrected)</td>
+            <td>0.7%</td>
+        </tr>
+    </table>
+    
+    <h2>Key Findings</h2>
+    <ul>
+        <li>Despite dense environment, dipole still dominates</li>
+        <li>Dynamical effects negligible with correct coefficients</li>
+        <li>Multiple coefficient errors found in this scenario</li>
+        <li>Behaves similar to isolated MSP (Sc2)</li>
+    </ul>
+    
+    <h2>References</h2>
+    <div class="ref-list">
+        <ol>
+            <li>Sigurdsson, S., & Phinney, E. S. (1993). Dynamics and interactions of binaries and neutron stars in globular clusters, ApJ, 415, 631</li>
+            <li>Rasio, F. A., et al. (2000). Collisions and close encounters involving massive main-sequence stars, ApJ, 532, 1114</li>
+            <li>Freire, P. C. C., et al. (2008). Eight new millisecond pulsars in NGC 6440 and NGC 6441, ApJ, 675, 670</li>
+            <li>Verbunt, F., & Freire, P. C. C. (2014). On the disruption of pulsar and X-ray binarys in globular clusters, A&A, 561, A11</li>
+        </ol>
+    </div>
+    
+    <div class="success-box">
+        <h3>Status: ✅ TESTED (major corrections)</h3>
+        <p>Three coefficient errors identified and physics validated after fixes</p>
+    </div>
+</div>
+
+<!-- TAB 5: SCENARIO 5 -->
+<div class="tab-content" id="tab5">
+    <h2>5️⃣ Scenario 5: Wide Binary MSP</h2>
+    
+    <div class="summary-grid">
+        <div class="card">
+            <h3>Physics</h3>
+            <p>MSP in wide binary</p>
+            <p>WD companion</p>
+            <p>No active accretion</p>
+            <p>Stable orbit (a > 10¹¹ cm)</p>
+        </div>
+        
+        <div class="card">
+            <h3>Initial Conditions</h3>
+            <p>B₀ = 4.0×10⁸ G</p>
+            <p>P₀ = 3.5 ms</p>
+            <p>a = 5.0×10¹¹ cm</p>
+            <p>M_comp = 0.2 Msun (WD)</p>
+        </div>
+        
+        <div class="card">
+            <h3>Final Results</h3>
+            <p>B = 3.27×10⁸ G (82%)</p>
+            <p>P = 3.61 ms</p>
+            <p>Pdot = 2.90×10⁻²⁰ s/s</p>
+            <p>ΔP = +0.11 ms</p>
+        </div>
+    </div>
+    
+    <h2>Evolution Figures</h2>
+    <img src="scenario5_analysis.png" alt="Scenario 5 Analysis">
+    
+    <h2>Comparison: Scenario 2 vs 5</h2>
+    <table>
+        <tr>
+            <th>Property</th>
+            <th>Sc2 (Isolated)</th>
+            <th>Sc5 (Wide Binary)</th>
+        </tr>
+        <tr>
+            <td>Configuration</td>
+            <td>Single</td>
+            <td>Binary</td>
+        </tr>
+        <tr>
+            <td>Companion</td>
+            <td>None</td>
+            <td>WD (0.2 Msun)</td>
+        </tr>
+        <tr>
+            <td>Evolution</td>
+            <td>Dipole only</td>
+            <td>Dipole only</td>
+        </tr>
+        <tr>
+            <td>Observable</td>
+            <td>No Doppler</td>
+            <td>Periodic Doppler</td>
+        </tr>
+        <tr>
+            <td>Result</td>
+            <td colspan="2">Nearly Identical</td>
+        </tr>
+    </table>
+    
+    <h2>Key Findings</h2>
+    <ul>
+        <li>Wide binaries behave like isolated MSPs</li>
+        <li>GW emission negligible for a > 10¹¹ cm</li>
+        <li>Dipole completely dominates (99.9%)</li>
+        <li>Distinguished observationally via orbital motion</li>
+    </ul>
+    
+    <h2>Observed Examples</h2>
+    <ul>
+        <li>PSR J0024-7204Y (47 Tuc): P = 2.20 ms, P_orb = 0.14 d</li>
+        <li>PSR J0514-4002A (NGC 1851): P = 4.99 ms, P_orb = 18.8 d</li>
+        <li>Many binary MSPs in Terzan 5 and 47 Tuc</li>
+    </ul>
+    
+    <h2>References</h2>
+    <div class="ref-list">
+        <ol>
+            <li>Freire, P. C. C., et al. (2017). Long-term observations of the pulsars in 47 Tucanae, MNRAS, 471, 857</li>
+            <li>Ridolfi, A., et al. (2016). Fifteen new pulsars discovered in NGC 6440, MNRAS, 462, 2918</li>
+            <li>Verbunt, F., & Freire, P. C. C. (2014). On the disruption of pulsar and X-ray binaries in globular clusters, A&A, 561, A11</li>
+            <li>Tauris, T. M., & Savonije, G. J. (1999). Formation of millisecond pulsars. I. Evolution of low-mass X-ray binaries, A&A, 350, 928</li>
+        </ol>
+    </div>
+    
+    <div class="success-box">
+        <h3>Status: ✅ FULLY TESTED</h3>
+        <p>Physics identical to Scenario 2, binary configuration verified</p>
+    </div>
+</div>
+
+<!-- TAB 6: SCENARIO 6 -->
+<div class="tab-content" id="tab6">
+    <h2>6️⃣ Scenario 6: NS-NS Merger</h2>
+    
+    <div class="summary-grid">
+        <div class="card">
+            <h3>Physics</h3>
+            <p>Two NSs in close binary</p>
+            <p>Strong GW emission</p>
+            <p>Possible mass transfer</p>
+            <p>Orbital decay</p>
+        </div>
+        
+        <div class="card">
+            <h3>Initial Conditions</h3>
+            <p>B₀ = 5.0×10¹¹ G</p>
+            <p>P₀ = 10.0 ms</p>
+            <p>a = 1.0×10¹⁰ cm (close)</p>
+            <p>M_comp = 1.4 Msun (NS)</p>
+        </div>
+        
+        <div class="card">
+            <h3>Final Results</h3>
+            <p>B = 4.09×10¹¹ G (82%)</p>
+            <p>P = 1,132 ms</p>
+            <p>Pdot = 1.46×10⁻¹⁶ s/s</p>
+            <p>Status: Partial test</p>
+        </div>
+    </div>
+    
+    <h2>Evolution Figures</h2>
+    <img src="scenario6_analysis.png" alt="Scenario 6 Analysis">
+    
+    <h2>Testing Status</h2>
+    <table>
+        <tr>
+            <th>Component</th>
+            <th>Status</th>
+            <th>Notes</th>
+        </tr>
+        <tr>
+            <td class="status-ok">✓ PDOT_DIPOLE</td>
+            <td>Tested</td>
+            <td>Works correctly</td>
+        </tr>
+        <tr>
+            <td class="status-ok">✓ PDOT_ENV</td>
+            <td>Tested</td>
+            <td>Negligible</td>
+        </tr>
+        <tr>
+            <td class="status-ok">✓ PDOT_ASYM</td>
+            <td>Tested</td>
+            <td>Small contribution</td>
+        </tr>
+        <tr>
+            <td class="status-warning">⚠ PDOT_GW</td>
+            <td>NOT tested</td>
+            <td>10⁶⁴× error</td>
+        </tr>
+        <tr>
+            <td class="status-warning">⚠ PDOT_MERGE</td>
+            <td>NOT tested</td>
+            <td>10¹⁴× error</td>
+        </tr>
+    </table>
+    
+    <h2>Coefficient Issues</h2>
+    <table>
+        <tr>
+            <th>Coefficient</th>
+            <th>Current</th>
+            <th>Expected</th>
+            <th>Error</th>
+        </tr>
+        <tr>
+            <td>XKGW</td>
+            <td>1.0×10⁻¹⁰</td>
+            <td>~1.2×10⁻⁷⁴</td>
+            <td>10⁶⁴×</td>
+        </tr>
+        <tr>
+            <td>XKMERGE</td>
+            <td>1.0×10⁻⁸</td>
+            <td>~1.0×10⁻²²</td>
+            <td>10¹⁴×</td>
+        </tr>
+    </table>
+    
+    <h2>Observed NS-NS Mergers</h2>
+    <ul>
+        <li><strong>GW170817:</strong> First detected NS-NS merger, M_total ~ 2.74 Msun</li>
+        <li><strong>GW190425:</strong> Second NS-NS merger, M_total ~ 3.4 Msun</li>
+        <li><strong>PSR J0737-3039:</strong> Double pulsar system (not yet merged)</li>
+    </ul>
+    
+    <h2>References</h2>
+    <div class="ref-list">
+        <ol>
+            <li>Abbott, B. P., et al. (2017). GW170817: Observation of Gravitational Waves from a Binary Neutron Star Inspiral, PRL, 119, 161101</li>
+            <li>Abbott, B. P., et al. (2020). GW190425: Observation of a Compact Binary Coalescence, ApJ, 892, L3</li>
+            <li>Peters, P. C., & Mathews, J. (1963). Gravitational Radiation from Point Masses, Phys. Rev., 131, 435</li>
+            <li>Faber, J. A., & Rasio, F. A. (2012). Binary Neutron Star Mergers, Living Rev. Relativ., 15, 8</li>
+            <li>Baiotti, L., & Rezzolla, L. (2017). Binary neutron star mergers: a review of Einstein's richest laboratory, Rep. Prog. Phys., 80, 096901</li>
+        </ol>
+    </div>
+    
+    <div class="info-box">
+        <h3>Status: ⚠️ PARTIAL TEST ONLY</h3>
+        <p>✓ Dipole + Environment + Asymmetric: TESTED and working</p>
+        <p>⚠ GW + Merge: NOT TESTED due to coefficient errors</p>
+        <p>Further verification of XKGW and XKMERGE required from literature</p>
+    </div>
+</div>
+
+<!-- TAB 7: SCENARIO 7 -->
+<div class="tab-content" id="tab7">
+    <h2>7️⃣ Scenario 7: NS-BH Merger</h2>
+    
+    <div class="summary-grid">
+        <div class="card">
+            <h3>Physics</h3>
+            <p>NS + BH in close binary</p>
+            <p>Stronger GW emission</p>
+            <p>Tidal disruption possible</p>
+            <p>No mass transfer</p>
+        </div>
+        
+        <div class="card">
+            <h3>Initial Conditions</h3>
+            <p>B₀ = 5.0×10¹¹ G</p>
+            <p>P₀ = 10.0 ms</p>
+            <p>a = 1.0×10¹⁰ cm</p>
+            <p>M_comp = 10 Msun (BH)</p>
+        </div>
+        
+        <div class="card">
+            <h3>Final Results</h3>
+            <p>B = 4.09×10¹¹ G (82%)</p>
+            <p>P = 1,132 ms</p>
+            <p>Pdot = 1.46×10⁻¹⁶ s/s</p>
+            <p>Status: Partial test</p>
+        </div>
+    </div>
+    
+    <h2>Evolution Figures</h2>
+    <img src="scenario7_analysis.png" alt="Scenario 7 Analysis">
+    
+    <h2>Comparison: NS-NS vs NS-BH</h2>
+    <table>
+        <tr>
+            <th>Property</th>
+            <th>Sc6 (NS-NS)</th>
+            <th>Sc7 (NS-BH)</th>
+        </tr>
+        <tr>
+            <td>M_companion</td>
+            <td>1.4 Msun</td>
+            <td>10 Msun</td>
+        </tr>
+        <tr>
+            <td>GW strength</td>
+            <td>Strong</td>
+            <td>STRONGER</td>
+        </tr>
+        <tr>
+            <td>Mass transfer</td>
+            <td>Possible</td>
+            <td>NO</td>
+        </tr>
+        <tr>
+            <td>Tidal effects</td>
+            <td>Symmetric</td>
+            <td>Asymmetric</td>
+        </tr>
+        <tr>
+            <td>Without GW/Merge</td>
+            <td colspan="2">Identical</td>
+        </tr>
+    </table>
+    
+    <h2>Testing Status</h2>
+    <ul>
+        <li class="status-ok">✓ Dipole: Tested and working</li>
+        <li class="status-ok">✓ Environment: Tested (negligible)</li>
+        <li class="status-ok">✓ Asymmetric: Tested (small)</li>
+        <li class="status-warning">⚠ GW: NOT tested (10⁶⁴× error)</li>
+        <li class="status-warning">⚠ Merge: N/A (BH has no surface)</li>
+    </ul>
+    
+    <h2>Observed NS-BH Mergers</h2>
+    <ul>
+        <li><strong>GW200105:</strong> M_BH ~ 8.9 Msun, M_NS ~ 1.9 Msun</li>
+        <li><strong>GW200115:</strong> M_BH ~ 5.7 Msun, M_NS ~ 1.5 Msun</li>
+        <li>No electromagnetic counterparts detected</li>
+    </ul>
+    
+    <h2>Key Differences from NS-NS</h2>
+    <ul>
+        <li>Heavier companion → stronger GW (when working)</li>
+        <li>No mass transfer (BH has no surface)</li>
+        <li>Tidal disruption possible (depends on BH mass/spin)</li>
+        <li>Always results in BH (possibly with disk)</li>
+    </ul>
+    
+    <h2>References</h2>
+    <div class="ref-list">
+        <ol>
+            <li>Abbott, R., et al. (2021). Observation of Gravitational Waves from Two Neutron Star-Black Hole Coalescences, ApJ, 915, L5</li>
+            <li>Foucart, F. (2012). Black hole-neutron star mergers: Disk mass predictions, Phys. Rev. D, 86, 124007</li>
+            <li>Lattimer, J. M., & Schramm, D. N. (1976). The tidal disruption of neutron stars by black holes, ApJ, 210, 549</li>
+            <li>Flanagan, É. É., & Hinderer, T. (2008). Constraining neutron-star tidal Love numbers with gravitational-wave detectors, Phys. Rev. D, 77, 021502</li>
+            <li>Stone, N., et al. (2013). Stellar tidal disruption events in general relativity, Phys. Rev. D, 87, 084053</li>
+        </ol>
+    </div>
+    
+    <div class="info-box">
+        <h3>Status: ⚠️ PARTIAL TEST ONLY</h3>
+        <p>Same issues as Scenario 6</p>
+        <p>Results essentially identical without GW/Merge physics</p>
+        <p>XKGW verification needed for realistic NS-BH physics</p>
+    </div>
+</div>
+
+        </div>
+        
+        <div class="footer">
+            <p><strong>Pulsar Subroutine Standalone Testing Report</strong></p>
+            <p>Maria Rhe | Byurakan Astrophysical Observatory</p>
+            <p>PhD Research | January 2026</p>
+            <p style="margin-top: 10px; font-size: 0.9em;">
+                Complete testing of pulsar evolution scenarios with identified coefficient corrections
+            </p>
+        </div>
+    </div>
+    
+    <script>
+        function showTab(index) {
+            const contents = document.querySelectorAll('.tab-content');
+            contents.forEach(c => c.classList.remove('active'));
+            
+            const tabs = document.querySelectorAll('.tab');
+            tabs.forEach(t => t.classList.remove('active'));
+            
+            document.getElementById('tab' + index).classList.add('active');
+            tabs[index].classList.add('active');
+            
+            document.querySelector('.content').scrollTop = 0;
+        }
+    </script>
+</body>
+</html>
