@@ -1,7 +1,9 @@
 # Pulsar Evolution Subroutine for NBODY6++GPU
 
-[![Fortran](https://img.shields.io/badge/Fortran-90%2B-purple.svg)](https://fortran-lang.org/)
-[![Python](https://img.shields.io/badge/Python-3.8%2B-blue.svg)](https://www.python.org/)
+🔭 Interactive Dashboards
+Click the links below to view the interactive graphical dashboards generated for this project:  
+- [pulsar_dashboard_v4_CORRECTED.html](https://maria-rah.github.io/pulsar-subroutine-testing/subroutine/pulsar_dashboard_v4_CORRECTED.html)
+- [DASHBOARD_FINAL.html](https://maria-rah.github.io/pulsar-subroutine-testing/standalone_tests/Python_analysis/DASHBOARD_FINAL.html)
 
 **Comprehensive pulsar evolution subroutine with magnetic field decay and spin evolution for NBODY6++GPU N-body simulations**
 
